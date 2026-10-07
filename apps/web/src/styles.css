@@ -1,0 +1,19 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  background: #1b2a3a;
+  color: #f4ead5;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+.app {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}

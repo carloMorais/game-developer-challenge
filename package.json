@@ -1,0 +1,35 @@
+{
+  "name": "pirate-battle",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @pirate/web dev",
+    "dev:server": "pnpm --filter @pirate/server dev",
+    "build": "pnpm --filter @pirate/web build",
+    "preview": "pnpm --filter @pirate/web preview",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test",
+    "e2e": "pnpm --filter @pirate/web e2e",
+    "e2e:update": "pnpm --filter @pirate/web e2e:update",
+    "e2e:report": "pnpm --filter @pirate/web e2e:report"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}

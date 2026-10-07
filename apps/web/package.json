@@ -1,0 +1,36 @@
+{
+  "name": "@pirate/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "assets": "node scripts/build-assets.mjs",
+    "predev": "node scripts/build-assets.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/build-assets.mjs",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+    "e2e": "playwright test",
+    "e2e:update": "playwright test --update-snapshots",
+    "e2e:report": "playwright show-report"
+  },
+  "dependencies": {
+    "@pirate/contracts": "workspace:*",
+    "@pirate/game-core": "workspace:*",
+    "@tanstack/react-query": "^5.104.1",
+    "axios": "^1.20.0",
+    "pixi.js": "^8.22.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "msw": "^3.0.2",
+    "vite": "^8.3.3"
+  }
+}
