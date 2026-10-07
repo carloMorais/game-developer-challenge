@@ -67,9 +67,16 @@ export interface OpenOptions {
   /** Fixed mock latency; default 0 so tests are fast and deterministic. */
   mockLatency?: number | null;
   noSpawns?: boolean;
+  /** Huge player HP pool (profiling runs always reach time-up). */
+  sturdy?: boolean;
   clock?: 'manual' | 'realtime';
   /** Saved options/settings to start with. */
-  settings?: { sessionTime?: number; spawnInterval?: number; playerName?: string };
+  settings?: {
+    sessionTime?: number;
+    spawnInterval?: number;
+    playerName?: string;
+    muted?: boolean;
+  };
 }
 
 export const PLAYER_ID = 'e2e-player-0001';
@@ -83,6 +90,7 @@ export async function openApp(page: Page, options: OpenOptions = {}): Promise<vo
   const latency = options.mockLatency === undefined ? 0 : options.mockLatency;
   if (latency !== null) params.set('mockLatency', String(latency));
   if (options.noSpawns) params.set('noSpawns', '1');
+  if (options.sturdy) params.set('sturdy', '1');
   if (options.clock) params.set('clock', options.clock);
 
   const settings = {
@@ -92,7 +100,7 @@ export async function openApp(page: Page, options: OpenOptions = {}): Promise<vo
       sessionTime: options.settings?.sessionTime ?? 120,
       spawnInterval: options.settings?.spawnInterval ?? 3,
     },
-    muted: true,
+    muted: options.settings?.muted ?? true,
   };
   // Only on the first load of the context, so reload tests keep their data.
   await page.addInitScript((value) => {

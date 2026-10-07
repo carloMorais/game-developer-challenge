@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-10-07T17:00:27.686Z",
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
+    "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009B41) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "devicePixelRatio": 1,
+    "hardwareConcurrency": 8
+  },
+  "config": {
+    "sessionTime": 180,
+    "spawnInterval": 1,
+    "cycles": 10,
+    "playPerCycleS": 30,
+    "sound": true,
+    "autopilot": "spray"
+  },
+  "growthFromCycle1ToLast": {
+    "jsHeapUsedMb": 1.32,
+    "domNodes": -1,
+    "jsEventListeners": 1
+  },
+  "snapshots": [
+    {
+      "label": "menu (before any match)",
+      "jsHeapUsedMb": 3.64,
+      "jsHeapTotalMb": 4.29,
+      "domNodes": 164,
+      "jsEventListeners": 179,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false
+    },
+    {
+      "label": "after cycle 1",
+      "jsHeapUsedMb": 8.04,
+      "jsHeapTotalMb": 8.6,
+      "domNodes": 179,
+      "jsEventListeners": 202,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 8
+    },
+    {
+      "label": "after cycle 2",
+      "jsHeapUsedMb": 8.4,
+      "jsHeapTotalMb": 9.1,
+      "domNodes": 179,
+      "jsEventListeners": 203,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 8
+    },
+    {
+      "label": "after cycle 3",
+      "jsHeapUsedMb": 8.64,
+      "jsHeapTotalMb": 9.35,
+      "domNodes": 178,
+      "jsEventListeners": 203,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 7
+    },
+    {
+      "label": "after cycle 4",
+      "jsHeapUsedMb": 8.76,
+      "jsHeapTotalMb": 9.35,
+      "domNodes": 178,
+      "jsEventListeners": 205,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 8
+    },
+    {
+      "label": "after cycle 5",
+      "jsHeapUsedMb": 8.92,
+      "jsHeapTotalMb": 9.35,
+      "domNodes": 179,
+      "jsEventListeners": 203,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 7
+    },
+    {
+      "label": "after cycle 6",
+      "jsHeapUsedMb": 8.97,
+      "jsHeapTotalMb": 9.6,
+      "domNodes": 178,
+      "jsEventListeners": 203,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 7
+    },
+    {
+      "label": "after cycle 7",
+      "jsHeapUsedMb": 9,
+      "jsHeapTotalMb": 9.85,
+      "domNodes": 179,
+      "jsEventListeners": 204,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 7
+    },
+    {
+      "label": "after cycle 8",
+      "jsHeapUsedMb": 9.07,
+      "jsHeapTotalMb": 9.85,
+      "domNodes": 178,
+      "jsEventListeners": 203,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 7
+    },
+    {
+      "label": "after cycle 9",
+      "jsHeapUsedMb": 9.33,
+      "jsHeapTotalMb": 9.85,
+      "domNodes": 179,
+      "jsEventListeners": 203,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 7
+    },
+    {
+      "label": "after cycle 10",
+      "jsHeapUsedMb": 9.36,
+      "jsHeapTotalMb": 9.85,
+      "domNodes": 178,
+      "jsEventListeners": 203,
+      "documents": 1,
+      "canvases": 0,
+      "testHooks": false,
+      "cycleAvgFps": 59.9,
+      "cycleMaxEnemies": 7
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Pirate Battle — Implementation Plan
 
-Working plan agreed before implementation. The challenge brief is in `README.md` (it will be replaced by the solution README at delivery; the brief moves to `docs/CHALLENGE.md`).
+Working plan agreed before implementation. The challenge brief is in [`docs/CHALLENGE.md`](docs/CHALLENGE.md) (it was the original `README.md`, replaced by the solution README at delivery).
 
 ## Constraints & priorities
 

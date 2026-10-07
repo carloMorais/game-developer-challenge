@@ -104,6 +104,9 @@ async function main() {
     }
   }
 
+  // Favicon: the player's ship.
+  await copy('png/default/ships/ship_5.png', 'favicon.png');
+
   // Menu background and sounds.
   await copy('ui_scene_background.png', 'ui_scene_background.png');
   const sounds = await readdir(join(src, 'sounds'));
