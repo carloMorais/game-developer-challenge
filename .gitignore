@@ -14,3 +14,14 @@ dist/
 
 # Logs
 *.log
+
+# Generated assets (built from /assets by apps/web/scripts/build-assets.mjs)
+apps/web/public/game/
+
+# Test & tooling output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.vercel/
+*.tsbuildinfo
