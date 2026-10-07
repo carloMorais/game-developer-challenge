@@ -18,7 +18,7 @@ import { attachKeyboard } from '../input/keyboard';
 import { WorldView } from '../render/WorldView';
 import { NO_INSETS, type Insets } from '../render/viewport';
 
-export type PauseReason = 'manual' | 'hidden' | 'blur';
+export type PauseReason = 'manual' | 'hidden' | 'blur' | 'orientation';
 
 export interface MatchOutcome {
   score: number;
@@ -35,6 +35,8 @@ export interface SessionCallbacks {
   /** Raw simulation events, once per frame batch (audio, analytics). */
   onEvents?(events: readonly GameEvent[]): void;
   onEnd?(outcome: MatchOutcome): void;
+  /** Every rendered frame, after the view syncs (keep it cheap). */
+  onFrame?(): void;
 }
 
 export interface GameSessionOptions {
@@ -241,6 +243,7 @@ export class GameSession {
       this.callbacks.onEvents?.(events);
     }
     this.view?.sync(this.alpha, this.renderTime);
+    this.callbacks.onFrame?.();
 
     const justEnded = !this.ended && this.world.status === 'ended';
     if (justEnded) {
