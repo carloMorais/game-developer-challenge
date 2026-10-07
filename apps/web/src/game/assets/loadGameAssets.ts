@@ -36,6 +36,9 @@ export async function loadGameAssets(onProgress?: (progress: number) => void): P
   const names = Object.keys(ATLASES) as AtlasName[];
   const loaded: Partial<GameAssets> = {};
   let done = 0;
+  // Promise.all rejects on the first failure while the other atlases keep
+  // loading; their progress must not be reported after the failure.
+  let failed = false;
   onProgress?.(0);
 
   await Promise.all(
@@ -44,11 +47,12 @@ export async function loadGameAssets(onProgress?: (progress: number) => void): P
       try {
         loaded[name] = await Assets.load<Spritesheet>(url);
       } catch (error) {
+        failed = true;
         await Assets.unload(url).catch(() => undefined);
         throw new AssetLoadError(name, error);
       }
       done++;
-      onProgress?.(done / names.length);
+      if (!failed) onProgress?.(done / names.length);
     }),
   );
 

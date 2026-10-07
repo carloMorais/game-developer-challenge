@@ -5,7 +5,10 @@ import { GAME_SOUNDS, GameAudio } from '../../game/audio/GameAudio';
 import { loadGameAssets, type GameAssets } from '../../game/assets/loadGameAssets';
 import { NO_INSETS } from '../../game/render/viewport';
 import { GameSession, type MatchOutcome } from '../../game/session/GameSession';
+import { installTestHooks } from '../../game/session/testHooks';
+import { testMode } from '../../lib/testMode';
 import { useMatchStore } from '../../store/matchStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { announce } from '../components/announcer';
 import { Dialog } from '../components/Dialog';
 import { GameButton } from '../components/GameButton';
@@ -46,16 +49,18 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   const paused = useMatchStore((s) => s.paused);
   useMatchAnnouncements(hud, paused);
 
-  // 1. Load (or reuse) textures with progress and retry. Sounds load alongside
-  //    but never block the battle.
+  // 1. Load (or reuse) textures with progress and retry. Sounds load afterwards
+  //    (and only when sound is on), so they never compete with or block the battle.
   useEffect(() => {
     let cancelled = false;
-    void audio.preload(GAME_SOUNDS);
     loadGameAssets((progress) => {
-      if (!cancelled) setLoad({ status: 'loading', progress });
+      // Progress never overrides a terminal state (error/ready).
+      if (!cancelled)
+        setLoad((prev) => (prev.status === 'loading' ? { status: 'loading', progress } : prev));
     })
       .then((assets) => {
         if (!cancelled) setLoad({ status: 'ready', assets });
+        if (!useSettingsStore.getState().muted) void audio.preload(GAME_SOUNDS);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -78,7 +83,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
     let endTimer: number | undefined;
     let sound: GameAudio | null = null;
     const session = new GameSession(
-      { config, seed, assets },
+      { config, seed, assets, clock: testMode.enabled ? testMode.clock : 'realtime' },
       {
         onHud: (h) => useMatchStore.getState().setHud(h),
         onPauseChange: (p, reason) => {
@@ -96,6 +101,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
     );
     sound = new GameAudio(session.world);
     sessionRef.current = session;
+    const uninstallTestHooks = testMode.enabled ? installTestHooks(session) : null;
 
     // Keep the arena clear of the on-screen buttons on touch devices.
     const coarse = window.matchMedia(COARSE_POINTER_QUERY);
@@ -120,6 +126,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
     return () => {
       window.clearTimeout(endTimer);
       coarse.removeEventListener('change', applyInsets);
+      uninstallTestHooks?.();
       sound?.dispose();
       session.destroy();
       if (sessionRef.current === session) sessionRef.current = null;

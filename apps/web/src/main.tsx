@@ -3,9 +3,17 @@ import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { App } from './app/App';
 import { queryClient } from './data/queryClient';
-import { flushPendingMatches, watchConnectivity } from './data/registration';
+import { flushPendingMatches, registerMatch, watchConnectivity } from './data/registration';
+import { testMode } from './lib/testMode';
 import { startMocks } from './mocks/browser';
 import './styles.css';
+
+declare global {
+  interface Window {
+    /** Test-only access to the data layer (`?test=1`). */
+    __pirateData?: { registerMatch: typeof registerMatch };
+  }
+}
 
 async function bootstrap() {
   const container = document.getElementById('root');
@@ -21,6 +29,8 @@ async function bootstrap() {
       </QueryClientProvider>
     </StrictMode>,
   );
+
+  if (testMode.enabled) window.__pirateData = { registerMatch };
 
   // Matches that could not be recorded earlier (failure, refresh) are retried.
   watchConnectivity();

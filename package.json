@@ -18,7 +18,8 @@
     "test": "pnpm -r --if-present test",
     "e2e": "pnpm --filter @pirate/web e2e",
     "e2e:update": "pnpm --filter @pirate/web e2e:update",
-    "e2e:report": "pnpm --filter @pirate/web e2e:report"
+    "e2e:report": "pnpm --filter @pirate/web e2e:report",
+    "e2e:docker": "bash scripts/e2e-docker.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

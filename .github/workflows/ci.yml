@@ -28,6 +28,10 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: checks
+    # Same image as scripts/e2e-docker.sh, which produces the Linux visual baselines.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -36,11 +40,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @pirate/web exec playwright install --with-deps chromium
       - run: pnpm e2e
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
-          path: apps/web/playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
           retention-days: 14

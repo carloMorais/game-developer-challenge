@@ -17,7 +17,7 @@ export interface ScenarioDef {
   description: string;
   /** Overrides the list data returned by GET endpoints. */
   data?: 'empty' | 'manyPages';
-  /** Latency in ms for the n-th request (0-based) of this scenario. */
+  /** Latency in ms for the n-th request (0-based) of this kind since the scenario started. */
   latency?: (kind: RequestKind, n: number, rng: Rng) => number;
   failure?: (kind: RequestKind) => Failure | null;
   /** Register commits, then the response never arrives (first attempt per match). */
@@ -50,8 +50,9 @@ export const SCENARIOS = {
   },
   outOfOrder: {
     label: 'Out-of-order responses',
-    description: 'Alternate requests are slow, so older responses arrive after newer ones.',
-    latency: (_k, n) => (n % 2 === 0 ? 2500 : 150),
+    description:
+      'Alternate list requests are slow, so an older response arrives after a newer one.',
+    latency: (kind, n) => (kind !== 'register' && n % 2 === 0 ? 2500 : 150),
   },
   timeout: {
     label: 'Timeout',
@@ -134,7 +135,13 @@ type Listener = (config: MockNetworkConfig) => void;
 class NetworkState {
   private config: MockNetworkConfig;
   private rng: Rng;
-  private requestCount = 0;
+  /** Requests seen per endpoint kind since the scenario was selected. */
+  private requestCounts: Record<RequestKind, number> = {
+    ranking: 0,
+    configs: 0,
+    history: 0,
+    register: 0,
+  };
   private readonly listeners = new Set<Listener>();
   /** Matches whose first register response was already "lost". */
   readonly lostResponses = new Set<string>();
@@ -157,7 +164,7 @@ class NetworkState {
   update(patch: Partial<MockNetworkConfig>): void {
     this.config = { ...this.config, ...patch };
     this.rng = createRng(this.config.seed);
-    this.requestCount = 0;
+    this.requestCounts = { ranking: 0, configs: 0, history: 0, register: 0 };
     this.lostResponses.clear();
     writeJson(CONFIG_KEY, this.config);
     for (const listener of this.listeners) listener(this.config);
@@ -169,7 +176,7 @@ class NetworkState {
 
   /** Latency for the next request of `kind`. */
   nextLatency(kind: RequestKind): number {
-    const n = this.requestCount++;
+    const n = this.requestCounts[kind]++;
     if (this.config.latencyMs !== null && this.config.scenario !== 'outOfOrder') {
       return this.config.latencyMs;
     }

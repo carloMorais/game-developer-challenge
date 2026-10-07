@@ -15,7 +15,7 @@ export function RegistrationStatus({ result }: { result: MatchResult }) {
       message = 'Recording your battle…';
       break;
     case 'failed':
-      message = `Not recorded yet: ${error ?? 'the server is unreachable'}. It is saved on this device and will retry.`;
+      message = `Not recorded yet: ${(error ?? 'the server is unreachable').replace(/\.$/, '')}. It is saved on this device and will retry.`;
       break;
     case 'pending':
       message = 'Waiting to record your battle…';

@@ -77,6 +77,13 @@ export class GameSession {
   private renderTime = 0;
   private lastHudAt = -Infinity;
   private lastHud: HudSnapshot | null = null;
+  /** Running totals derived from simulation events (tests, profiling). */
+  readonly stats = {
+    shots: { front: 0, port: 0, starboard: 0 },
+    kills: 0,
+    spawned: { chaser: 0, shooter: 0 },
+    playerHits: 0,
+  };
   private insets: Insets = NO_INSETS;
   private relayout: (() => void) | null = null;
 
@@ -138,8 +145,16 @@ export class GameSession {
     this.cleanups.push(() => app.renderer.off('resize', onResize));
     onResize();
 
-    app.ticker.add(this.onTick);
-    this.cleanups.push(() => app.ticker.remove(this.onTick));
+    if (this.clock === 'realtime') {
+      app.ticker.add(this.onTick);
+      this.cleanups.push(() => app.ticker.remove(this.onTick));
+    } else {
+      // Manual clock: nothing changes between advance() calls, so don't burn
+      // CPU re-rendering identical frames; advance() renders on demand.
+      app.ticker.stop();
+      this.flushFrame();
+      app.render();
+    }
 
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') this.pause('hidden');
@@ -239,6 +254,7 @@ export class GameSession {
   private flushFrame(): void {
     const events = drainEvents(this.world);
     if (events.length > 0) {
+      this.tally(events);
       this.view?.handleEvents(events, this.renderTime);
       this.callbacks.onEvents?.(events);
     }
@@ -261,6 +277,17 @@ export class GameSession {
         seed: this.world.seed,
         config: this.world.config,
       });
+    }
+  }
+
+  private tally(events: readonly GameEvent[]): void {
+    const playerId = this.world.playerId;
+    for (const event of events) {
+      if (event.type === 'shotFired' && event.shipId === playerId) this.stats.shots[event.slot]++;
+      else if (event.type === 'shipDestroyed' && event.byTeam === 'player') this.stats.kills++;
+      else if (event.type === 'shipSpawned' && event.kind !== 'player')
+        this.stats.spawned[event.kind]++;
+      else if (event.type === 'shipDamaged' && event.shipId === playerId) this.stats.playerHits++;
     }
   }
 
