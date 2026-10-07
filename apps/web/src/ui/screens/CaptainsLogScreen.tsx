@@ -3,6 +3,8 @@ import { navigate, type LogTab } from '../../app/router';
 import { audio } from '../../game/audio/AudioManager';
 import { GameButton } from '../components/GameButton';
 import { Panel } from '../components/Panel';
+import { HistoryTab } from '../log/HistoryTab';
+import { RankingTab } from '../log/RankingTab';
 import { ScreenLayout } from './ScreenLayout';
 
 const TABS: readonly { id: LogTab; label: string }[] = [
@@ -68,7 +70,7 @@ export function CaptainsLogScreen({ tab }: { tab: LogTab }) {
             tabIndex={0}
             className="log-panel"
           >
-            {tab === t.id && <p className="log-panel__empty">No battles recorded yet.</p>}
+            {tab === t.id && (t.id === 'ranking' ? <RankingTab /> : <HistoryTab />)}
           </div>
         ))}
         <div className="menu-actions">

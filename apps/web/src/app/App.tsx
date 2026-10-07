@@ -3,9 +3,11 @@ import { createMatchConfig, type GameConfig, type MatchOptions } from '@pirate/g
 import { audio } from '../game/audio/AudioManager';
 import type { MatchOutcome } from '../game/session/GameSession';
 import { randomId } from '../lib/storage';
-import { useResultStore } from '../store/resultStore';
+import { registerMatch } from '../data/registration';
+import { toRecordInput, useResultStore, type MatchResult } from '../store/resultStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { LiveRegion } from '../ui/components/LiveRegion';
+import { NetworkPanel } from '../ui/dev/NetworkPanel';
 import { CaptainsLogScreen } from '../ui/screens/CaptainsLogScreen';
 import { MenuScreen } from '../ui/screens/MenuScreen';
 import { OptionsScreen } from '../ui/screens/OptionsScreen';
@@ -82,7 +84,7 @@ export function App() {
   const finish = (outcome: MatchOutcome) => {
     if (!match) return;
     const { playerId, playerName } = useSettingsStore.getState();
-    useResultStore.getState().setLastResult({
+    const result: MatchResult = {
       matchId: randomId(),
       playerId,
       playerName,
@@ -92,7 +94,10 @@ export function App() {
       endedAt: new Date().toISOString(),
       options: match.options,
       seed: outcome.seed,
-    });
+    };
+    useResultStore.getState().setLastResult(result);
+    // Persisted and sent in the background; the player can keep playing.
+    void registerMatch(toRecordInput(result));
     navigate({ name: 'result' }, { replace: true });
   };
 
@@ -134,6 +139,8 @@ export function App() {
     <>
       <LiveRegion />
       {renderRoute()}
+      {/* Kept off the battle screen so it never covers the HUD or touch controls. */}
+      {route.name !== 'play' && <NetworkPanel />}
     </>
   );
 }
