@@ -6,6 +6,8 @@
  *   collisions and rendering still run for real.
  * - `&clock=realtime` keeps the display-driven clock (pause/focus tests).
  * - `&noSpawns=1` disables enemy spawning (isolated movement tests).
+ * - `&sturdy=1` gives the player a huge HP pool, so profiling runs last the
+ *   whole match (a config change only; damage still applies).
  *
  * Seeds come from `?seed=` (match) and `?mockSeed=` (network mocks).
  */
@@ -14,8 +16,11 @@ const params =
     ? new URLSearchParams()
     : new URLSearchParams(window.location.search);
 
+const enabled = params.get('test') === '1';
+
 export const testMode = {
-  enabled: params.get('test') === '1',
+  enabled,
   clock: params.get('clock') === 'realtime' ? ('realtime' as const) : ('manual' as const),
-  noSpawns: params.get('noSpawns') === '1',
+  noSpawns: enabled && params.get('noSpawns') === '1',
+  sturdy: enabled && params.get('sturdy') === '1',
 };

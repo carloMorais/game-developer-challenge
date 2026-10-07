@@ -26,11 +26,20 @@ const GameScreen = lazy(() =>
   import('../ui/game/GameScreen').then((m) => ({ default: m.GameScreen })),
 );
 
-/** Test-only variant (`?test=1&noSpawns=1`) for isolated movement checks. */
-const NO_SPAWN_CONFIG: GameConfig = {
-  ...DEFAULT_GAME_CONFIG,
-  spawn: { ...DEFAULT_GAME_CONFIG.spawn, initialDelay: 1e9 },
-};
+/**
+ * Test-only base config: `?test=1&noSpawns=1` for isolated movement checks,
+ * `?test=1&sturdy=1` so profiling matches always run to time-up.
+ */
+function baseConfig(): GameConfig {
+  let config = DEFAULT_GAME_CONFIG;
+  if (testMode.noSpawns) {
+    config = { ...config, spawn: { ...config.spawn, initialDelay: 1e9 } };
+  }
+  if (testMode.sturdy) {
+    config = { ...config, player: { ...config.player, maxHp: 1_000_000 } };
+  }
+  return config;
+}
 
 interface PendingMatch {
   key: string;
@@ -91,7 +100,7 @@ export function App() {
     // Snapshot of the current options; later changes only affect new matches.
     setMatch({
       key: randomId(),
-      config: createMatchConfig(options, testMode.noSpawns ? NO_SPAWN_CONFIG : DEFAULT_GAME_CONFIG),
+      config: createMatchConfig(options, baseConfig()),
       options: { ...options },
       seed: newMatchSeed(),
     });

@@ -28,3 +28,6 @@ blob-report/
 
 # Playwright report produced by scripts/e2e-docker.sh
 playwright-report-linux/
+
+# Versioned test and profiling reports (delivery evidence)
+!docs/reports/**/playwright-report/
