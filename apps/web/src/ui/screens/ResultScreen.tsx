@@ -3,6 +3,7 @@ import type { MatchResult } from '../../store/resultStore';
 import { GameButton } from '../components/GameButton';
 import { Panel } from '../components/Panel';
 import { END_REASON_LABEL, formatTime } from '../format';
+import { RegistrationStatus } from './RegistrationStatus';
 import { ScreenLayout } from './ScreenLayout';
 
 interface ResultScreenProps {
@@ -36,9 +37,7 @@ export function ResultScreen({ result, onPlayAgain }: ResultScreenProps) {
             <dd data-testid="result-reason">{END_REASON_LABEL[result.endReason]}</dd>
           </div>
         </dl>
-        <p className="result-registration" data-testid="result-registration">
-          Saved on this device.
-        </p>
+        <RegistrationStatus result={result} />
         <div className="menu-actions">
           <GameButton onClick={onPlayAgain} data-autofocus>
             Play again
