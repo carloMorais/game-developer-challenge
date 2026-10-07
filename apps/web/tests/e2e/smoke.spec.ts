@@ -9,5 +9,6 @@ test('app boots without console errors', async ({ page }) => {
 
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Pirate Battle' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
   expect(errors).toEqual([]);
 });

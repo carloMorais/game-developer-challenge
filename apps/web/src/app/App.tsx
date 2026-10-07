@@ -1,82 +1,156 @@
-import { Suspense, lazy, useState } from 'react';
-import { DEFAULT_MATCH_OPTIONS, createMatchConfig, type GameConfig } from '@pirate/game-core';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { createMatchConfig, type GameConfig, type MatchOptions } from '@pirate/game-core';
+import { audio } from '../game/audio/AudioManager';
 import type { MatchOutcome } from '../game/session/GameSession';
-import { formatTime } from '../ui/format';
+import { randomId } from '../lib/storage';
+import { useResultStore } from '../store/resultStore';
+import { useSettingsStore } from '../store/settingsStore';
+import { LiveRegion } from '../ui/components/LiveRegion';
+import { CaptainsLogScreen } from '../ui/screens/CaptainsLogScreen';
+import { MenuScreen } from '../ui/screens/MenuScreen';
+import { OptionsScreen } from '../ui/screens/OptionsScreen';
+import { ResultScreen } from '../ui/screens/ResultScreen';
+import { navigate, parseRoute, useRoute, type Route } from './router';
 
 // PixiJS is only needed in combat: keep it out of the menu bundle.
 const GameScreen = lazy(() =>
   import('../ui/game/GameScreen').then((m) => ({ default: m.GameScreen })),
 );
 
-type Screen =
-  | { name: 'menu' }
-  | { name: 'game'; config: Readonly<GameConfig>; seed: number; key: number }
-  | { name: 'result'; outcome: MatchOutcome };
+interface PendingMatch {
+  key: string;
+  config: Readonly<GameConfig>;
+  options: MatchOptions;
+  seed: number;
+}
 
 function newMatchSeed(): number {
   const fromUrl = Number(new URLSearchParams(window.location.search).get('seed'));
   return Number.isInteger(fromUrl) && fromUrl > 0 ? fromUrl : Math.floor(Math.random() * 2 ** 31);
 }
 
-/** Temporary shell: menus and results get their real screens in phase 3. */
 export function App() {
-  const [screen, setScreen] = useState<Screen>({ name: 'menu' });
+  const route = useRoute();
+  const [match, setMatch] = useState<PendingMatch | null>(null);
+  const lastResult = useResultStore((s) => s.lastResult);
+  const muted = useSettingsStore((s) => s.muted);
 
-  const play = () =>
-    setScreen({
-      name: 'game',
-      // Snapshot of the current options; later changes only affect new matches.
-      config: createMatchConfig(DEFAULT_MATCH_OPTIONS),
+  useEffect(() => audio.setMuted(muted), [muted]);
+
+  // Browsers allow audio only after a user gesture.
+  useEffect(() => {
+    const unlock = () => audio.unlock();
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
+  // A battle cannot be resumed after a reload or by URL: send the player home.
+  // Same for a result route without a stored result.
+  const invalid = (route.name === 'play' && !match) || (route.name === 'result' && !lastResult);
+  useEffect(() => {
+    if (invalid) navigate({ name: 'menu' }, { replace: true });
+  }, [invalid]);
+
+  // Leaving the battle route abandons the match (nothing is recorded).
+  // (Going "forward" in history must not restart it either.)
+  useEffect(() => {
+    const onHashChange = () => {
+      if (parseRoute(window.location.hash).name !== 'play') setMatch(null);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  useScreenFocus(route);
+
+  const play = () => {
+    const { options } = useSettingsStore.getState();
+    // Snapshot of the current options; later changes only affect new matches.
+    setMatch({
+      key: randomId(),
+      config: createMatchConfig(options),
+      options: { ...options },
       seed: newMatchSeed(),
-      key: Date.now(),
     });
+    navigate({ name: 'play' }, { replace: route.name === 'result' });
+  };
 
-  switch (screen.name) {
-    case 'menu':
-      return (
-        <main className="app">
-          <h1>Pirate Battle</h1>
-          <button type="button" className="btn btn--primary" onClick={play}>
-            Play
-          </button>
-        </main>
-      );
-    case 'game':
-      return (
-        <Suspense
-          fallback={
-            <main className="app" role="status">
-              Loading the fleet…
-            </main>
-          }
-        >
-          <GameScreen
-            key={screen.key}
-            config={screen.config}
-            seed={screen.seed}
-            onEnd={(outcome) => setScreen({ name: 'result', outcome })}
-            onExit={() => setScreen({ name: 'menu' })}
-          />
-        </Suspense>
-      );
-    case 'result':
-      return (
-        <main className="app">
-          <h1>{screen.outcome.endReason === 'timeUp' ? 'Time is up!' : 'Your ship sank!'}</h1>
-          <p>
-            Score {screen.outcome.score} · Time played {formatTime(screen.outcome.elapsedMs)}
-          </p>
-          <button type="button" className="btn btn--primary" onClick={play}>
-            Play again
-          </button>
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => setScreen({ name: 'menu' })}
-          >
-            Main menu
-          </button>
-        </main>
-      );
+  const finish = (outcome: MatchOutcome) => {
+    if (!match) return;
+    const { playerId, playerName } = useSettingsStore.getState();
+    useResultStore.getState().setLastResult({
+      matchId: randomId(),
+      playerId,
+      playerName,
+      score: outcome.score,
+      durationMs: Math.round(outcome.elapsedMs),
+      endReason: outcome.endReason,
+      endedAt: new Date().toISOString(),
+      options: match.options,
+      seed: outcome.seed,
+    });
+    navigate({ name: 'result' }, { replace: true });
+  };
+
+  function renderRoute() {
+    if (invalid) return null;
+    switch (route.name) {
+      case 'menu':
+        return <MenuScreen onPlay={play} />;
+      case 'options':
+        return <OptionsScreen />;
+      case 'log':
+        return <CaptainsLogScreen tab={route.tab} />;
+      case 'result':
+        return lastResult && <ResultScreen result={lastResult} onPlayAgain={play} />;
+      case 'play':
+        return (
+          match && (
+            <Suspense
+              fallback={
+                <main className="screen" role="status">
+                  Loading the fleet…
+                </main>
+              }
+            >
+              <GameScreen
+                key={match.key}
+                config={match.config}
+                seed={match.seed}
+                onEnd={finish}
+                onExit={() => navigate({ name: 'menu' })}
+              />
+            </Suspense>
+          )
+        );
+    }
   }
+
+  return (
+    <>
+      <LiveRegion />
+      {renderRoute()}
+    </>
+  );
+}
+
+/** Moves focus into each new screen so keyboard and screen-reader users land on it. */
+function useScreenFocus(route: Route): void {
+  const key = route.name;
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      if (document.querySelector('[role="dialog"]')) return;
+      const target =
+        document.querySelector<HTMLElement>('main [data-autofocus]') ??
+        document.querySelector<HTMLElement>('main h1');
+      if (!target) return;
+      if (target.tagName === 'H1') target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [key]);
 }

@@ -91,6 +91,19 @@ async function main() {
   await writeJson('atlas/tiles.json', tileAtlas('tiles.png', 1));
   await writeJson('atlas/tiles@2x.json', tileAtlas('tiles@2x.png', 2));
 
+  // Individual UI images for CSS (9-slice panels, buttons): 1x and 2x.
+  for (const [density, dir] of [
+    ['default', 'ui/1x'],
+    ['retina', 'ui/2x'],
+  ]) {
+    for (const group of ['menu', 'controls', 'hud']) {
+      const files = await readdir(join(src, 'png', density, 'ui', group));
+      await Promise.all(
+        files.map((file) => copy(join('png', density, 'ui', group, file), join(dir, file))),
+      );
+    }
+  }
+
   // Menu background and sounds.
   await copy('ui_scene_background.png', 'ui_scene_background.png');
   const sounds = await readdir(join(src, 'sounds'));

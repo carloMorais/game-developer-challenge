@@ -21,7 +21,7 @@ export function Hud({ hud, onPause }: HudProps) {
   const clipWidth = (FILL.x + FILL.w * ratio) * k;
 
   return (
-    <div className="hud">
+    <div className="hud" role="region" aria-label="Match status">
       <div className="hud-health" data-testid="hud-health">
         <UiSprite name="icon_heart" width={36} className="hud-health__icon" />
         <div className="hud-health__bar" style={uiSpriteStyle('health_frame', BAR_WIDTH)}>
@@ -29,6 +29,7 @@ export function Hud({ hud, onPause }: HudProps) {
             <span style={{ display: 'block', ...uiSpriteStyle(fill, BAR_WIDTH) }} />
           </div>
           <span className="hud-health__text">
+            <span className="sr-only">Health </span>
             {Math.ceil(hud.hp)} / {hud.maxHp}
           </span>
         </div>
@@ -41,7 +42,10 @@ export function Hud({ hud, onPause }: HudProps) {
           data-testid="hud-score"
         >
           <UiSprite name="icon_score" width={26} />
-          <span>{hud.score}</span>
+          <span>
+            <span className="sr-only">Score </span>
+            {hud.score}
+          </span>
         </div>
         <div
           className="hud-counter"
@@ -49,7 +53,10 @@ export function Hud({ hud, onPause }: HudProps) {
           data-testid="hud-time"
         >
           <UiSprite name="icon_time" width={26} />
-          <span>{formatTime(hud.remainingMs)}</span>
+          <span>
+            <span className="sr-only">Time remaining </span>
+            {formatTime(hud.remainingMs)}
+          </span>
         </div>
         <button type="button" className="round-btn" onClick={onPause} aria-label="Pause game">
           <UiSprite name="icon_pause" width={26} />
