@@ -25,3 +25,6 @@ test-results/
 blob-report/
 .vercel/
 *.tsbuildinfo
+
+# Playwright report produced by scripts/e2e-docker.sh
+playwright-report-linux/

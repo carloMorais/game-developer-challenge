@@ -89,10 +89,15 @@ function TouchButton({
 
   const down = (event: PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
     if (pointers.current.size === 0) onAction(def.action, true);
     pointers.current.add(event.pointerId);
     event.currentTarget.dataset.pressed = 'true';
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // The pointer may already be gone (fast taps, synthetic events): the
+      // press still counts and pointerup/cancel releases it.
+    }
   };
   const up = (event: PointerEvent<HTMLButtonElement>) => {
     if (!pointers.current.delete(event.pointerId)) return;

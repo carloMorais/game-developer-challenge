@@ -1,8 +1,15 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { createMatchConfig, type GameConfig, type MatchOptions } from '@pirate/game-core';
+import {
+  DEFAULT_GAME_CONFIG,
+  createMatchConfig,
+  type GameConfig,
+  type MatchOptions,
+} from '@pirate/game-core';
 import { audio } from '../game/audio/AudioManager';
+import { GAME_SOUNDS } from '../game/audio/GameAudio';
 import type { MatchOutcome } from '../game/session/GameSession';
 import { randomId } from '../lib/storage';
+import { testMode } from '../lib/testMode';
 import { registerMatch } from '../data/registration';
 import { toRecordInput, useResultStore, type MatchResult } from '../store/resultStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -18,6 +25,12 @@ import { navigate, parseRoute, useRoute, type Route } from './router';
 const GameScreen = lazy(() =>
   import('../ui/game/GameScreen').then((m) => ({ default: m.GameScreen })),
 );
+
+/** Test-only variant (`?test=1&noSpawns=1`) for isolated movement checks. */
+const NO_SPAWN_CONFIG: GameConfig = {
+  ...DEFAULT_GAME_CONFIG,
+  spawn: { ...DEFAULT_GAME_CONFIG.spawn, initialDelay: 1e9 },
+};
 
 interface PendingMatch {
   key: string;
@@ -37,7 +50,11 @@ export function App() {
   const lastResult = useResultStore((s) => s.lastResult);
   const muted = useSettingsStore((s) => s.muted);
 
-  useEffect(() => audio.setMuted(muted), [muted]);
+  useEffect(() => {
+    audio.setMuted(muted);
+    // Sounds are fetched lazily; turning sound on mid-battle loads them then.
+    if (!muted && route.name === 'play') void audio.preload(GAME_SOUNDS);
+  }, [muted, route.name]);
 
   // Browsers allow audio only after a user gesture.
   useEffect(() => {
@@ -74,7 +91,7 @@ export function App() {
     // Snapshot of the current options; later changes only affect new matches.
     setMatch({
       key: randomId(),
-      config: createMatchConfig(options),
+      config: createMatchConfig(options, testMode.noSpawns ? NO_SPAWN_CONFIG : DEFAULT_GAME_CONFIG),
       options: { ...options },
       seed: newMatchSeed(),
     });

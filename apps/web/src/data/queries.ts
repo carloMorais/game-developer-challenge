@@ -63,9 +63,16 @@ export function useHistoryQuery(playerId: string, page: number) {
 }
 
 /** Both tabs refresh after a match is recorded. */
-export function invalidateMatchLists(): Promise<void> {
-  return Promise.all([
+export async function invalidateMatchLists(): Promise<void> {
+  // invalidateQueries() only cancels an in-flight fetch when the query already
+  // has data; during a first load it would keep the (now stale) request. Cancel
+  // explicitly so the refetch always reflects the newly recorded match.
+  await Promise.all([
+    queryClient.cancelQueries({ queryKey: queryKeys.ranking }),
+    queryClient.cancelQueries({ queryKey: queryKeys.history }),
+  ]);
+  await Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.ranking }),
     queryClient.invalidateQueries({ queryKey: queryKeys.history }),
-  ]).then(() => undefined);
+  ]);
 }

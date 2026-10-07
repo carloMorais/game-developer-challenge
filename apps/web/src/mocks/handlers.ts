@@ -29,6 +29,9 @@ function errorResponse(status: number, code: ApiErrorBody['error']['code'], mess
 /**
  * Applies the active scenario: latency, then an optional failure. Returns a
  * response to short-circuit with, or null to continue normally.
+ *
+ * List endpoints build their payload *before* calling this, so a slow response
+ * carries the data as it was when the request arrived (realistic staleness).
  */
 async function simulate(kind: RequestKind): Promise<HttpResponse<JsonBodyType> | null> {
   const latency = network.nextLatency(kind);
@@ -86,9 +89,6 @@ export const handlers = [
     if (!config.ok) return errorResponse(400, 'BAD_REQUEST', config.error);
     if (!pagination.ok) return errorResponse(400, 'BAD_REQUEST', pagination.error);
 
-    const simulated = await simulate('ranking');
-    if (simulated) return simulated;
-
     const key = configKey(config.value);
     const entries: RankingEntry[] = visibleRecords({ config: config.value })
       .filter((r) => configKey(r.config) === key)
@@ -103,12 +103,11 @@ export const handlers = [
         endedAt: r.endedAt,
       }));
     const { page: p, pageSize } = pagination.value;
-    return HttpResponse.json(page(entries, p, pageSize));
+    const body = page(entries, p, pageSize);
+    return (await simulate('ranking')) ?? HttpResponse.json(body);
   }),
 
   http.get(url(API_ROUTE_PATTERNS.rankingConfigs), async () => {
-    const simulated = await simulate('configs');
-    if (simulated) return simulated;
     const counts = new Map<string, { config: MatchConfigDto; entries: number }>();
     for (const record of visibleRecords()) {
       const key = configKey(record.config);
@@ -121,7 +120,7 @@ export const handlers = [
         a.config.sessionTime - b.config.sessionTime ||
         a.config.spawnInterval - b.config.spawnInterval,
     );
-    return HttpResponse.json<RankingConfigsResponse>({ configs });
+    return (await simulate('configs')) ?? HttpResponse.json<RankingConfigsResponse>({ configs });
   }),
 
   http.get(url(API_ROUTE_PATTERNS.playerMatches), async ({ request, params }) => {
@@ -133,16 +132,14 @@ export const handlers = [
     });
     if (!pagination.ok) return errorResponse(400, 'BAD_REQUEST', pagination.error);
 
-    const simulated = await simulate('history');
-    if (simulated) return simulated;
-
     const matches = visibleRecords({ playerId })
       .filter((r) => r.playerId === playerId)
       .sort((a, b) =>
         a.endedAt === b.endedAt ? (a.matchId < b.matchId ? -1 : 1) : a.endedAt < b.endedAt ? 1 : -1,
       );
     const { page: p, pageSize } = pagination.value;
-    return HttpResponse.json(page(matches, p, pageSize));
+    const body = page(matches, p, pageSize);
+    return (await simulate('history')) ?? HttpResponse.json(body);
   }),
 
   http.put(url(API_ROUTE_PATTERNS.match), async ({ request, params }) => {
