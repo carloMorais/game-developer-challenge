@@ -1305,7 +1305,6 @@ kbd {
   pointer-events: none;
 }
 
-.countdown__vignette,
 .danger-vignette {
   position: absolute;
   inset: 0;
@@ -1315,17 +1314,6 @@ kbd {
     rgb(200 30 20 / var(--edge, 0.5)) 100%
   );
   animation: vignette-pulse 1s ease-in-out infinite;
-}
-
-.countdown--mid .countdown__vignette {
-  --clear: 44%;
-  --edge: 0.62;
-}
-
-.countdown--high .countdown__vignette {
-  --clear: 34%;
-  --edge: 0.78;
-  animation-duration: 0.5s;
 }
 
 @keyframes vignette-pulse {
@@ -1385,7 +1373,7 @@ kbd {
   animation-play-state: paused;
 }
 
-/* Low health: the countdown's red pulse, under the HUD. */
+/* Low health only: a red edge pulse, under the HUD. */
 .danger-vignette {
   z-index: 9;
   --clear: 46%;
@@ -1475,7 +1463,7 @@ kbd {
 }
 
 .rotate-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 30;
   display: grid;
@@ -1933,23 +1921,6 @@ kbd {
     gap: 6px;
     padding: 0;
   }
-}
-
-.toggle-field {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.toggle-field input {
-  width: 22px;
-  height: 22px;
-  accent-color: #f1b53a;
 }
 
 /* ---------- Captain's log tables ---------- */

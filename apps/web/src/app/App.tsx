@@ -13,14 +13,16 @@ import {
 import { UI_SOUNDS, audio } from '../game/audio/AudioManager';
 import { GAME_SOUNDS } from '../game/audio/GameAudio';
 import type { MatchOutcome } from '../game/session/GameSession';
-import { autoEnterFullscreen, exitBattleFullscreen } from '../lib/fullscreen';
+import { enterBattleFullscreen, exitBattleFullscreen } from '../lib/fullscreen';
 import { randomId } from '../lib/storage';
 import { testMode } from '../lib/testMode';
 import { registerMatch } from '../data/registration';
 import { useProgressStore } from '../store/progressStore';
 import { toRecordInput, useResultStore, type MatchResult } from '../store/resultStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { LandscapeGate } from '../ui/components/LandscapeGate';
 import { LiveRegion } from '../ui/components/LiveRegion';
+import { gateState, useGateState } from '../ui/components/useGateState';
 import { NetworkPanel } from '../ui/dev/NetworkPanel';
 import { CaptainsLogScreen } from '../ui/screens/CaptainsLogScreen';
 import { DifficultyScreen } from '../ui/screens/DifficultyScreen';
@@ -60,6 +62,9 @@ interface PendingMatch {
 /** Elements that play the hover sound. */
 const HOVER_TARGETS = 'button, [role="tab"], .swatch, .hull-choice';
 
+/** Phones stay fullscreen and in landscape on these screens. */
+const BATTLE_ROUTES = new Set<Route['name']>(['setup', 'play', 'result']);
+
 /** Battle fade-out / result fade-in (CSS `crossfade-*`). */
 const CROSSFADE_MS = 700;
 
@@ -80,6 +85,7 @@ export function App() {
   /** Key of a finished battle still fading out over the result screen. */
   const [leaving, setLeaving] = useState<string | null>(null);
   const leavingRef = useRef<string | null>(null);
+  const gate = useGateState();
 
   useEffect(() => {
     audio.setMuted(muted);
@@ -142,14 +148,16 @@ export function App() {
 
   useScreenFocus(route);
 
-  // Fullscreen lasts from Set sail through Play again; any other screen leaves it.
+  // Fullscreen lasts from Play through the battle and Play again; other screens leave it.
   useEffect(() => {
-    if (route.name !== 'play' && route.name !== 'result') exitBattleFullscreen();
+    if (!BATTLE_ROUTES.has(route.name)) exitBattleFullscreen();
   }, [route.name]);
 
   const play = (difficulty: Difficulty) => {
     const settings = useSettingsStore.getState();
-    autoEnterFullscreen(settings.autoFullscreen);
+    enterBattleFullscreen();
+    // Phones start only fullscreen and in landscape (the gate covers the screen).
+    if (gateState() !== 'open') return;
     // Never start a locked difficulty (e.g. stale saved choice): fall back to Easy.
     const chosen = useProgressStore.getState().isUnlocked(difficulty) ? difficulty : 'easy';
     settings.setDifficulty(chosen);
@@ -268,6 +276,8 @@ export function App() {
       <LiveRegion />
       {renderRoute()}
       {renderBattle()}
+      {/* The battle screen draws its own gate, so it can pause first. */}
+      {(route.name === 'setup' || route.name === 'result') && <LandscapeGate state={gate} />}
       {/* Kept off the battle screen so it never covers the HUD or touch controls. */}
       {route.name !== 'play' && <NetworkPanel />}
     </>
