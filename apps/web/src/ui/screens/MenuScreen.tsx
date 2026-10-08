@@ -10,11 +10,12 @@ export function MenuScreen() {
         <Panel labelledBy="menu-title" className="menu-panel">
           <h1 id="menu-title" className="menu-title">
             <img
-              src={`${import.meta.env.BASE_URL}game/ui/1x/title_pirate_battle.png`}
-              srcSet={`${import.meta.env.BASE_URL}game/ui/1x/title_pirate_battle.png 1x, ${import.meta.env.BASE_URL}game/ui/2x/title_pirate_battle.png 2x`}
+              src={`${import.meta.env.BASE_URL}game/ui/1x/title_pirate_battle.webp`}
+              srcSet={`${import.meta.env.BASE_URL}game/ui/1x/title_pirate_battle.webp 1x, ${import.meta.env.BASE_URL}game/ui/2x/title_pirate_battle.webp 2x`}
               alt="Pirate Battle"
               width={384}
               height={128}
+              fetchPriority="high"
             />
           </h1>
           <p className="tagline">Set sail. Take command.</p>
