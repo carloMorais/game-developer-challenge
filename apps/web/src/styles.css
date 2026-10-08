@@ -76,7 +76,7 @@ p {
   overflow: auto;
   background:
     linear-gradient(rgb(8 18 30 / 0.35), rgb(8 18 30 / 0.55)),
-    url('/game/ui_scene_background.png') center / cover no-repeat,
+    url('/game/ui_scene_background.webp') center / cover no-repeat,
     #1d6fa5;
 }
 
@@ -110,8 +110,8 @@ p {
   border-style: solid;
   border-width: 40px 32px;
   border-image-source: image-set(
-    url('/game/ui/1x/panel_menu.png') 1x,
-    url('/game/ui/2x/panel_menu.png') 2x
+    url('/game/ui/1x/panel_menu.webp') 1x,
+    url('/game/ui/2x/panel_menu.webp') 2x
   );
   border-image-slice: 8.333% 8.333% fill;
   border-image-repeat: stretch;
@@ -200,22 +200,22 @@ p {
 .game-btn--primary {
   color: #3b220c;
   background-image: image-set(
-    url('/game/ui/1x/button_primary_normal.png') 1x,
-    url('/game/ui/2x/button_primary_normal.png') 2x
+    url('/game/ui/1x/button_primary_normal.webp') 1x,
+    url('/game/ui/2x/button_primary_normal.webp') 2x
   );
 }
 
 .game-btn--primary:hover {
   background-image: image-set(
-    url('/game/ui/1x/button_primary_hover.png') 1x,
-    url('/game/ui/2x/button_primary_hover.png') 2x
+    url('/game/ui/1x/button_primary_hover.webp') 1x,
+    url('/game/ui/2x/button_primary_hover.webp') 2x
   );
 }
 
 .game-btn--primary:active {
   background-image: image-set(
-    url('/game/ui/1x/button_primary_pressed.png') 1x,
-    url('/game/ui/2x/button_primary_pressed.png') 2x
+    url('/game/ui/1x/button_primary_pressed.webp') 1x,
+    url('/game/ui/2x/button_primary_pressed.webp') 2x
   );
 }
 
@@ -223,8 +223,8 @@ p {
   cursor: not-allowed;
   color: #5e5547;
   background-image: image-set(
-    url('/game/ui/1x/button_primary_disabled.png') 1x,
-    url('/game/ui/2x/button_primary_disabled.png') 2x
+    url('/game/ui/1x/button_primary_disabled.webp') 1x,
+    url('/game/ui/2x/button_primary_disabled.webp') 2x
   );
 }
 
@@ -232,15 +232,15 @@ p {
   color: var(--ink);
   text-shadow: 0 1px 2px #000;
   background-image: image-set(
-    url('/game/ui/1x/button_secondary_normal.png') 1x,
-    url('/game/ui/2x/button_secondary_normal.png') 2x
+    url('/game/ui/1x/button_secondary_normal.webp') 1x,
+    url('/game/ui/2x/button_secondary_normal.webp') 2x
   );
 }
 
 .game-btn--secondary:active {
   background-image: image-set(
-    url('/game/ui/1x/button_secondary_pressed.png') 1x,
-    url('/game/ui/2x/button_secondary_pressed.png') 2x
+    url('/game/ui/1x/button_secondary_pressed.webp') 1x,
+    url('/game/ui/2x/button_secondary_pressed.webp') 2x
   );
 }
 
@@ -283,8 +283,8 @@ p {
   color: #3b220c;
   background: center / 100% 100% no-repeat;
   background-image: image-set(
-    url('/game/ui/1x/button_round_normal.png') 1x,
-    url('/game/ui/2x/button_round_normal.png') 2x
+    url('/game/ui/1x/button_round_normal.webp') 1x,
+    url('/game/ui/2x/button_round_normal.webp') 2x
   );
   cursor: pointer;
   flex: none;
@@ -292,16 +292,16 @@ p {
 
 .round-btn:hover {
   background-image: image-set(
-    url('/game/ui/1x/button_round_hover.png') 1x,
-    url('/game/ui/2x/button_round_hover.png') 2x
+    url('/game/ui/1x/button_round_hover.webp') 1x,
+    url('/game/ui/2x/button_round_hover.webp') 2x
   );
 }
 
 .round-btn:active,
 .touch-btn[data-pressed='true'] {
   background-image: image-set(
-    url('/game/ui/1x/button_round_pressed.png') 1x,
-    url('/game/ui/2x/button_round_pressed.png') 2x
+    url('/game/ui/1x/button_round_pressed.webp') 1x,
+    url('/game/ui/2x/button_round_pressed.webp') 2x
   );
 }
 
