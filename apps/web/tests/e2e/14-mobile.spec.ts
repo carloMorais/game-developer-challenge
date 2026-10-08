@@ -136,4 +136,19 @@ test.describe('14. Mobile: fullscreen, touch overlay, HUD fade, short screens @m
       await expectNoScroll(page, '.screen');
     });
   }
+
+  test("the Captain's log tables fit a portrait phone", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await openApp(page, { route: '#/log/history', scenario: 'manyPages' });
+    await expect(page.getByTestId('history-table').locator('tbody tr')).toHaveCount(5);
+    for (const testId of ['history-table', 'ranking-table']) {
+      if (testId === 'ranking-table') await page.getByRole('tab', { name: 'Ranking' }).click();
+      const table = page.getByTestId(testId);
+      await expect(table.locator('tbody tr').first()).toBeVisible();
+      const overflow = await page
+        .locator('.screen')
+        .evaluate((el) => el.scrollWidth - el.clientWidth);
+      expect(overflow, `${testId} scrolls the screen sideways`).toBeLessThanOrEqual(1);
+    }
+  });
 });

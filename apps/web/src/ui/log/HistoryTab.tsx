@@ -57,7 +57,11 @@ export function HistoryTab() {
 
       {data && data.items.length > 0 && (
         <>
-          <table className="log-table" aria-busy={history.isFetching} data-testid="history-table">
+          <table
+            className="log-table log-table--history"
+            aria-busy={history.isFetching}
+            data-testid="history-table"
+          >
             <caption className="sr-only">Your match history</caption>
             <thead>
               <tr>

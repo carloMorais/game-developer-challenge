@@ -1936,6 +1936,7 @@ kbd {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-width: 0;
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1943,6 +1944,8 @@ kbd {
 }
 
 .log-toolbar select {
+  max-width: 100%;
+  text-overflow: ellipsis;
   font: inherit;
   text-transform: none;
   letter-spacing: normal;
@@ -2105,6 +2108,27 @@ kbd {
 @media (max-width: 640px) {
   .log-table th:nth-child(4),
   .log-table td:nth-child(4) {
+    display: none;
+  }
+
+  .log-table th,
+  .log-table td {
+    padding-inline: 6px;
+  }
+
+  .log-table th {
+    letter-spacing: 0.06em;
+  }
+
+  .log-table__reason {
+    letter-spacing: 0;
+  }
+}
+
+/* Portrait phones: the history table drops its duration column to fit. */
+@media (max-width: 480px) {
+  .log-table--history th:nth-child(5),
+  .log-table--history td:nth-child(5) {
     display: none;
   }
 }
