@@ -110,9 +110,7 @@ async function main() {
     for (const group of ['menu', 'controls', 'hud']) {
       const files = await readdir(join(src, 'png', density, 'ui', group));
       await Promise.all(
-        files.map((file) =>
-          copyWithWebp(join('png', density, 'ui', group, file), join(dir, file)),
-        ),
+        files.map((file) => copyWithWebp(join('png', density, 'ui', group, file), join(dir, file))),
       );
     }
   }
