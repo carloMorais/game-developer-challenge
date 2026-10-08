@@ -2,20 +2,25 @@ import { Application, type Ticker } from 'pixi.js';
 import {
   FixedStepLoop,
   applyCommand,
+  createMatchStats,
   createWorld,
   drainEvents,
   getHudSnapshot,
+  getPlayer,
+  recordMatchEvents,
   stepWorld,
   type EndReason,
   type GameConfig,
   type GameEvent,
   type HudSnapshot,
+  type MatchStats,
   type World,
 } from '@pirate/game-core';
 import type { GameAssets } from '../assets/loadGameAssets';
 import { InputState, type GameAction } from '../input/InputState';
 import { attachKeyboard } from '../input/keyboard';
 import { WorldView } from '../render/WorldView';
+import type { ShipLook } from '../shipLook';
 import { NO_INSETS, type Insets } from '../render/viewport';
 
 export type PauseReason = 'manual' | 'hidden' | 'blur' | 'orientation';
@@ -26,6 +31,9 @@ export interface MatchOutcome {
   endReason: EndReason;
   seed: number;
   config: Readonly<GameConfig>;
+  stats: MatchStats;
+  /** Player health when the match ended. */
+  hp: number;
 }
 
 export interface SessionCallbacks {
@@ -44,6 +52,8 @@ export interface GameSessionOptions {
   seed: number;
   assets: GameAssets;
   ownerId?: string;
+  /** The player's customised ship. */
+  playerLook?: ShipLook;
   /**
    * 'realtime' advances with the display; 'manual' only advances through
    * {@link GameSession.advance} (deterministic tests).
@@ -84,6 +94,8 @@ export class GameSession {
     spawned: { chaser: 0, shooter: 0 },
     playerHits: 0,
   };
+  /** Player performance for the result screen and grade. */
+  readonly matchStats = createMatchStats();
   private insets: Insets = NO_INSETS;
   private relayout: (() => void) | null = null;
 
@@ -132,7 +144,12 @@ export class GameSession {
     app.canvas.dataset.testid = 'game-canvas';
     container.appendChild(app.canvas);
 
-    this.view = new WorldView(this.world, this.options.assets, app.renderer);
+    this.view = new WorldView(
+      this.world,
+      this.options.assets,
+      app.renderer,
+      this.options.playerLook,
+    );
     app.stage.addChild(this.view.root);
 
     const onResize = () => {
@@ -276,11 +293,14 @@ export class GameSession {
         endReason: this.world.endReason,
         seed: this.world.seed,
         config: this.world.config,
+        stats: structuredClone(this.matchStats),
+        hp: Math.max(0, getPlayer(this.world)?.hp ?? 0),
       });
     }
   }
 
   private tally(events: readonly GameEvent[]): void {
+    recordMatchEvents(this.matchStats, events, this.world);
     const playerId = this.world.playerId;
     for (const event of events) {
       if (event.type === 'shotFired' && event.shipId === playerId) this.stats.shots[event.slot]++;

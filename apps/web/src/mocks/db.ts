@@ -2,7 +2,7 @@ import { isSameMatch, type MatchRecord, type MatchRecordInput } from '@pirate/co
 import { isRecord, readJson, removeKey, writeJson } from '../lib/storage';
 import { initialFixtures } from './fixtures';
 
-const DB_KEY = 'pirate-battle:mock-db:v1';
+const DB_KEY = 'pirate-battle:mock-db:v2';
 
 interface Snapshot {
   revision: number;

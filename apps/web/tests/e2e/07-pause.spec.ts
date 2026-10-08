@@ -26,9 +26,15 @@ test.describe('7. Pause, focus loss and resume without timer drift', () => {
     await page.waitForTimeout(300);
     await expect(page.getByTestId('hud-time')).toHaveText(hudTime);
 
-    const resumedAt = Date.now();
     await page.getByRole('button', { name: 'Resume' }).click();
     await expect(dialog).toBeHidden();
+    // The 3-2-1 get-ready count keeps the battle frozen until it ends.
+    const countdown = page.getByTestId('resume-countdown');
+    await expect(countdown).toBeVisible();
+    expect((await gameState(page)).elapsedMs).toBe(frozen.elapsedMs);
+    // Polled every frame, so the resume moment is measured tightly.
+    await page.waitForFunction(() => !document.querySelector('[data-testid="resume-countdown"]'));
+    const resumedAt = Date.now();
     await page.waitForTimeout(500);
     const resumed = await gameState(page);
     const realSinceResume = Date.now() - resumedAt;

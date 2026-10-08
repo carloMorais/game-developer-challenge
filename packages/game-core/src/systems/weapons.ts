@@ -92,6 +92,7 @@ function fire(world: World, ship: Ship, slot: WeaponSlot, weapon: WeaponConfig):
     tick: world.tick,
     shipId: ship.id,
     slot,
+    count: weapon.count,
     x: ship.x + dirX * weapon.muzzleOffset,
     y: ship.y + dirY * weapon.muzzleOffset,
     angle,

@@ -21,6 +21,7 @@ export function RoundButton({
   return (
     <button
       type="button"
+      data-sfx
       className={`round-btn ${className}`}
       style={{ width: size, height: size }}
       aria-label={label}

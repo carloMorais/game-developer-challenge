@@ -3,7 +3,8 @@ import { useHistoryQuery } from '../../data/queries';
 import { flushPendingMatches, useRegistrationStore } from '../../data/registration';
 import { useSettingsStore } from '../../store/settingsStore';
 import { GameButton } from '../components/GameButton';
-import { END_REASON_LABEL, formatDateTime, formatTime } from '../format';
+import { END_REASON_LABEL, formatDateTime, formatDifficulty, formatTime } from '../format';
+import { gradeTone } from '../grade';
 import { Pagination } from './Pagination';
 import { QueryState } from './QueryState';
 
@@ -61,6 +62,8 @@ export function HistoryTab() {
             <thead>
               <tr>
                 <th scope="col">Date</th>
+                <th scope="col">Waters</th>
+                <th scope="col">Grade</th>
                 <th scope="col">Points</th>
                 <th scope="col">Duration</th>
                 <th scope="col">Result</th>
@@ -73,6 +76,12 @@ export function HistoryTab() {
                   <tr key={match.matchId}>
                     <td className="log-table__date">
                       <strong>{date}</strong> · {time}
+                    </td>
+                    <td>{formatDifficulty(match.config.difficulty)}</td>
+                    <td className="log-table__grade">
+                      <span className={`grade-chip grade-chip--${gradeTone(match.grade)}`}>
+                        {match.grade}
+                      </span>
                     </td>
                     <td className="log-table__points">{match.score}</td>
                     <td>{formatTime(match.durationMs)}</td>

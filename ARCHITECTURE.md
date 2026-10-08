@@ -112,11 +112,15 @@ The 5-cycle memory run in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) checks th
 
 ### Rendering (`WorldView`)
 
-- Layers, bottom to top: water, wakes/splashes/wrecks, islands, arena frame, ships, projectiles, explosions/smoke, health bars.
+- Layers, bottom to top: water, wakes/splashes/wrecks, islands, arena frame, ships, projectiles, explosions/smoke, castaways, health bars.
 - Each frame `sync(alpha)` mirrors the world into display objects. A `ShipView` is created the first time a ship id appears and destroyed when it disappears. Poses are interpolated between the previous and current tick.
-- Ship sprites follow the pack's `ship_{c + 6·state}` scheme: `state` 0 is intact (> 2/3 HP), 1 damaged, 2 badly damaged (with deck fire) and 3 the sinking wreck. Colours: player blue (5), Chaser red (3), Shooter black (2).
+- **Ships are assembled from atlas parts** (`ShipView`, `SHIP_LAYOUT` in `theme.ts`) instead of the pack's prebuilt `ship_*` sprites. Z-order: hull → cannons → small sail → main sail → pennant → fire. Hull, sail and flag frames follow the damage state (intact above 2/3 HP, damaged, badly damaged with deck fire, sinking wreck). `cannon_loose` guns sit on the foredeck (bow gun) and amidships (broadsides). Enemies keep fixed colours (Chaser red, Shooter black); the player's look comes from the ship designer.
+- **Ship customisation** (`game/shipLook.ts`): sail colour, pennant colour and large or small hull, persisted in `settingsStore` (`shipLook`) and passed through `GameSession` to `WorldView` as `playerLook`. The Options form previews it in the DOM (`ShipPreview`, which reads the source XML atlas).
 - Feedback: muzzle flash per cannon (three along a broadside), hit flash, small explosion and debris on damage, double explosion and sinking wreck on destruction, splash when a shot expires on water, smoke when it hits an island. Screen shake scales with the event (strong when the player dies, medium for Chaser impacts, light otherwise). Every ship has a health bar that does not rotate with it.
+- **Hits** rock the ship (a decaying roll plus a jolt). **Sinking** drops castaways (`crew_*` sprites) into the water: 1–3 for enemies, 1 for the player (`WorldView.dropCastaways`, `EffectsLayer.castaway`).
 - Effect timing uses the session's render clock, which stops while paused, so effects freeze with the game.
+- **Wakes** react to how the ship moves. Foam is released with part of the ship's velocity and loses it with exponential drag, so while cruising the hull outruns it and two streaks open into a V over a darker channel, with bow spray at speed. `WorldView` samples each ship's speed to detect acceleration. Braking releases a bow wave and a following sea that keep their momentum and wash past the stopping hull; coming to rest adds a hull-shaped ring and backwash; pulling away kicks foam back from the stern. Idle ships send out slow ripples. Wake sprites have their own budget, so they never take slots from combat effects.
+- **Reload feedback** lives on the ship's own cannons: after firing, a gun runs in towards the centre line, drops to 55 % alpha and puffs light smoke (`EffectsLayer.reloadSmoke`) until it is loaded, then runs out again. Each side also has its own reload sound (panned left or right, different pitch), skipped while the trigger is held because the gun fires straight away.
 
 ### Canvas fitting and pixel density
 
@@ -129,22 +133,23 @@ The world is a fixed 1280×720 logical arena. `fitViewport` scales it uniformly 
 ## Resource management
 
 - **Textures:** three atlases (`ships`, `tiles`, `ui`) are generated at build time from `assets/` by `scripts/build-assets.mjs`. It converts the ships' Starling XML to Pixi JSON, cuts the 64×64 tilesheet into a grid atlas and re-points the UI atlas. `loadGameAssets` loads them once through `Assets.load` with progress reporting and caches the result for the rest of the session. If an atlas fails, its URL is unloaded so **Try again** fetches it afresh instead of reusing a rejected promise. The battle starts only once every atlas has loaded.
-- **Pools:** projectile sprites and effect sprites are pooled and reused instead of allocated per shot or explosion. Textures generated at runtime (soft dot and ring) belong to the `EffectsLayer` and are destroyed with it.
+- **Pools:** projectile sprites and effect sprites are pooled and reused instead of allocated per shot or explosion. Textures generated at runtime (soft dot, ring and a radial-gradient foam blob) belong to the `EffectsLayer` and are destroyed with it.
 - **Code splitting:** PixiJS and the battle screen are a lazy chunk, so the menus load without the renderer.
-- **Sound:** 27 WAV files decoded through Web Audio by `AudioManager`, cached after the first load. They load after the textures and only when sound is on, so audio never delays or blocks a battle. The same sound retriggered within a short window is dropped to avoid volume spikes. Loops (ocean, sailing) stop with the session.
+- **Sound:** 27 WAV files decoded through Web Audio by `AudioManager`, cached after the first load. They load after the textures and only when sound is on, so audio never delays or blocks a battle. The same sound retriggered within a short window is dropped to avoid volume spikes. Loops (ocean, sailing) stop with the session. Cues the pack has no file for (countdown beeps, reload clicks, fanfare, grade stamp, unlock) are synthesised with oscillators and filtered noise in `synth.ts`, so they need no assets.
 
 ## Local persistence
 
-All keys are namespaced and versioned (`pirate-battle:*:v1`), and storage access never throws: private mode or quota errors degrade to "not stored".
+All keys are namespaced and versioned (`pirate-battle:*:vN`, bumped when a shape changes so stale data is ignored), and storage access never throws: private mode or quota errors degrade to "not stored".
 
-| Key                   | Contents                                                             |
-| --------------------- | -------------------------------------------------------------------- |
-| `settings:v1`         | `playerId` (UUID created on first visit), player name, options, mute |
-| `last-result:v1`      | Last completed match (shown on `#/result`, survives refresh)         |
-| `pending-matches:v1`  | Completed matches not yet confirmed by the API                       |
-| `recorded-matches:v1` | Ids recently confirmed (so the result screen shows "recorded")       |
-| `mock-db:v1`          | The mock backend's records and revision                              |
-| `mock-network:v1`     | Selected scenario, latency override, seed                            |
+| Key                   | Contents                                                                                                                |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `settings:v1`         | `playerId` (UUID created on first visit), player name, custom options, mute, chosen difficulty, How to play open/closed |
+| `progress:v1`         | Hardest unlocked difficulty and best grade per difficulty                                                               |
+| `last-result:v2`      | Last completed match with grade and stats (shown on `#/result`, survives refresh)                                       |
+| `pending-matches:v2`  | Completed matches not yet confirmed by the API (entries that no longer validate are dropped)                            |
+| `recorded-matches:v1` | Ids recently confirmed (so the result screen shows "recorded")                                                          |
+| `mock-db:v2`          | The mock backend's records and revision                                                                                 |
+| `mock-network:v1`     | Selected scenario, latency override, seed                                                                               |
 
 Options are validated on load as well as on save, so a stale or tampered value falls back to the defaults.
 
@@ -152,14 +157,14 @@ Options are validated on load as well as on save, so a stale or tampered value f
 
 ### Contracts (`packages/contracts`)
 
-Plain, serializable DTOs shared by the client, the mocks and (later) the server: `MatchRecordInput` (`matchId`, `playerId`, `playerName`, `score`, effective `durationMs`, `endReason`, `endedAt`, `config`), `MatchRecord` (adds `recordedAt`), `RankingEntry`, `Page<T>` and an error body. The package also has runtime validation (`parseMatchRecordInput`, `parsePagination`, `parseMatchConfig`), pagination, and the ranking order `compareRanking`: **score desc → duration asc → `endedAt` asc → `matchId`**, which is total and deterministic. The ranking only compares matches with the same `configKey` (session time + spawn interval). A `CONTRACTS_VERSION` constant is exposed by the server's health route.
+Plain, serializable DTOs shared by the client, the mocks and (later) the server: `MatchRecordInput` (`matchId`, `playerId`, `playerName`, `score`, effective `durationMs`, `endReason`, `grade`, `endedAt`, `config` with `difficulty`, `sessionTime` and `spawnInterval`), `MatchRecord` (adds `recordedAt`), `RankingEntry`, `Page<T>` and an error body. The package also has runtime validation (`parseMatchRecordInput`, `parsePagination`, `parseMatchConfig`), pagination, and the ranking order `compareRanking`: **score desc → duration asc → `endedAt` asc → `matchId`**, which is total and deterministic. The ranking only compares matches with the same `configKey` (difficulty + session time + spawn interval; presets always run fixed times, so in practice each preset is one leaderboard). A `CONTRACTS_VERSION` constant is exposed by the server's health route.
 
-| Endpoint                                                   | Purpose                                                                                      |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `GET /api/ranking?sessionTime&spawnInterval&page&pageSize` | Leaderboard page for one configuration                                                       |
-| `GET /api/ranking/configs`                                 | Configurations that have entries (selector)                                                  |
-| `PUT /api/matches/:matchId`                                | Idempotent create: 201 created, 200 already stored, 409 if the id exists with different data |
-| `GET /api/players/:playerId/matches?page&pageSize`         | Player's history, newest first                                                               |
+| Endpoint                                                              | Purpose                                                                                      |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET /api/ranking?difficulty&sessionTime&spawnInterval&page&pageSize` | Leaderboard page for one configuration                                                       |
+| `GET /api/ranking/configs`                                            | Configurations that have entries (selector)                                                  |
+| `PUT /api/matches/:matchId`                                           | Idempotent create: 201 created, 200 already stored, 409 if the id exists with different data |
+| `GET /api/players/:playerId/matches?page&pageSize`                    | Player's history, newest first                                                               |
 
 `PUT` with a client-generated `matchId` makes registration naturally idempotent: resending, double clicks and retries after a timeout all land on the same record.
 
@@ -215,6 +220,8 @@ WebSockets are out of scope, but the seams are in place:
 - **Broadside vs bow cannon:** the bow cannon is precise and fast (0.4 s); broadsides hit harder in total (3 × 20) but have a shorter range and a 1.3 s cooldown per side, which rewards positioning alongside an enemy.
 - **Destroyed enemies' projectiles are removed** together with the ship. The brief says destroyed enemies stop causing damage, so shots still in flight from a sunk Shooter are cleared too.
 - **Only kills by the player's weapons score.** A Chaser exploding on the player gives nothing.
+- **Difficulties change enemies, never the player**, so skill carries over between them and the grade stays comparable. Presets fix their session and spawn times so each one is a single leaderboard; Custom keeps the Options screen meaningful (and always available, as the brief requires) with the Normal balance.
+- **Grades favour surviving well over trading hits.** Health and survival only count when afloat, so dying caps the grade at B and the unlock rule (survive with B or better) cannot be met by a reckless kill spree that sinks the ship.
 
 ## Limitations and known trade-offs
 

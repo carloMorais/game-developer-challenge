@@ -13,6 +13,7 @@ test.describe('2. Asset loading, failures and retry', () => {
 
     await openApp(page);
     await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.getByRole('button', { name: 'Set sail' }).click();
     const progress = page.getByTestId('loading-progress');
     await expect(progress).toBeVisible();
     await expect(page.getByText('Loading the fleet…')).toBeVisible();
@@ -35,6 +36,7 @@ test.describe('2. Asset loading, failures and retry', () => {
 
       await openApp(page);
       await page.getByRole('button', { name: 'Play', exact: true }).click();
+      await page.getByRole('button', { name: 'Set sail' }).click();
       await expect(page.getByRole('alert')).toContainText('The battle assets could not be loaded.');
       await expect(page.locator('canvas')).toHaveCount(0);
 
@@ -48,6 +50,7 @@ test.describe('2. Asset loading, failures and retry', () => {
       await page.route('**/game/atlas/ui.json', (route) => route.abort());
       await openApp(page);
       await page.getByRole('button', { name: 'Play', exact: true }).click();
+      await page.getByRole('button', { name: 'Set sail' }).click();
       await expect(page.getByRole('alert')).toBeVisible();
       await page.getByRole('button', { name: 'Main menu' }).click();
       await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();

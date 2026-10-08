@@ -1,14 +1,18 @@
 import { MutationObserver } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import type { MatchRecordInput, RegisterMatchResponse } from '@pirate/contracts';
+import {
+  parseMatchRecordInput,
+  type MatchRecordInput,
+  type RegisterMatchResponse,
+} from '@pirate/contracts';
 import { isRecord, readJson, writeJson } from '../lib/storage';
 import { toApiError, type ApiError } from './apiClient';
 import { invalidateMatchLists } from './queries';
 import { queryClient } from './queryClient';
 import { repositories } from './repositories';
 
-const PENDING_KEY = 'pirate-battle:pending-matches:v1';
+const PENDING_KEY = 'pirate-battle:pending-matches:v2';
 const RECORDED_KEY = 'pirate-battle:recorded-matches:v1';
 const MAX_RECORDED = 50;
 
@@ -32,7 +36,8 @@ function parsePending(raw: unknown): PendingMatch[] | null {
   if (!Array.isArray(raw)) return null;
   return raw.filter(
     (item): item is PendingMatch =>
-      isRecord(item) && isRecord(item.input) && typeof item.input.matchId === 'string',
+      // Entries from an older contract can never be accepted: drop them.
+      isRecord(item) && parseMatchRecordInput(item.input).ok,
   );
 }
 

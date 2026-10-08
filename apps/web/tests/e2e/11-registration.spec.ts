@@ -20,8 +20,8 @@ test.describe('11. Recording a match, refreshing both tabs and recovering pendin
     await expect(history.first()).toContainText('Time up');
 
     await page.getByRole('tab', { name: 'Ranking' }).click();
-    // The ranking opens on the player's own settings (60 s / 3 s).
-    await expect(page.getByLabel('Battle settings')).toHaveValue('60s/3s');
+    // The ranking opens on the player's own settings (custom 60 s / 3 s).
+    await expect(page.getByLabel('Waters')).toHaveValue('custom/60s/3s');
     await page.getByRole('button', { name: 'Next page' }).click();
     await expect(page.locator('tr.is-own')).toContainText('Captain Test');
     await expect(page.locator('tr.is-own .badge')).toHaveText('You');
@@ -47,6 +47,7 @@ test.describe('11. Recording a match, refreshing both tabs and recovering pendin
       await expect(page.getByTestId('hud-score')).toBeVisible();
       await page.keyboard.press('Escape');
       await page.getByRole('button', { name: 'Main menu' }).click();
+      await page.getByRole('button', { name: 'Leave' }).click();
 
       await page.reload();
       await page.getByRole('button', { name: 'Match history' }).click();

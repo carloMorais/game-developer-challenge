@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { EndReason, GameConfig } from '@pirate/game-core';
 import { audio } from '../../game/audio/AudioManager';
-import { GAME_SOUNDS, GameAudio } from '../../game/audio/GameAudio';
+import { GAME_SOUNDS, GameAudio, LOW_HEALTH_RATIO } from '../../game/audio/GameAudio';
 import { loadGameAssets, type GameAssets } from '../../game/assets/loadGameAssets';
 import { NO_INSETS } from '../../game/render/viewport';
 import { GameSession, type MatchOutcome } from '../../game/session/GameSession';
@@ -13,7 +13,8 @@ import { announce } from '../components/announcer';
 import { Dialog } from '../components/Dialog';
 import { GameButton } from '../components/GameButton';
 import { Panel } from '../components/Panel';
-import { OptionsForm } from '../screens/OptionsForm';
+import { Countdown } from './Countdown';
+import { countdownSecond } from './countdownTime';
 import { Hud } from './Hud';
 import { TouchControls } from './TouchControls';
 import { COARSE_POINTER_QUERY, TOUCH_GUTTER } from './touchLayout';
@@ -31,14 +32,22 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; assets: GameAssets };
 
-/** Delay between the final blow and the result screen, so the ending plays out. */
-const END_DELAY_MS = 1600;
+/**
+ * Delay between the final blow and the result screen: the banner lands and the
+ * sea keeps moving, then the battle cross-fades into the result (App).
+ */
+const END_DELAY_MS = 1900;
+/** Get-ready seconds between leaving the pause menu and play resuming. */
+const RESUME_COUNTDOWN_S = 3;
 const PORTRAIT_QUERY = '(orientation: portrait) and (pointer: coarse)';
 
 export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   const [load, setLoad] = useState<LoadState>({ status: 'loading', progress: 0 });
   const [attempt, setAttempt] = useState(0);
-  const [pauseView, setPauseView] = useState<'menu' | 'options'>('menu');
+  /** Asking before abandoning the battle from the pause menu. */
+  const [confirmingExit, setConfirmingExit] = useState(false);
+  /** Seconds left before play resumes after the pause menu; null when not counting. */
+  const [resumeIn, setResumeIn] = useState<number | null>(null);
   const [ended, setEnded] = useState<EndReason | null>(null);
   const [portrait, setPortrait] = useState(() => window.matchMedia(PORTRAIT_QUERY).matches);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,7 +92,14 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
     let endTimer: number | undefined;
     let sound: GameAudio | null = null;
     const session = new GameSession(
-      { config, seed, assets, clock: testMode.enabled ? testMode.clock : 'realtime' },
+      {
+        config,
+        seed,
+        assets,
+        // Snapshot: changing the ship mid-battle applies to the next one.
+        playerLook: useSettingsStore.getState().shipLook,
+        clock: testMode.enabled ? testMode.clock : 'realtime',
+      },
       {
         onHud: (h) => useMatchStore.getState().setHud(h),
         onPauseChange: (p, reason) => {
@@ -151,31 +167,53 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   };
 
   const pause = useCallback(() => sessionRef.current?.pause('manual'), []);
+  // Resuming counts down 3-2-1 (with a tick each second) so the player can get ready.
   const resume = useCallback(() => {
-    setPauseView('menu');
-    sessionRef.current?.resume();
+    setConfirmingExit(false);
+    setResumeIn(RESUME_COUNTDOWN_S);
   }, []);
 
-  // Esc / P toggle pause while this screen is active; Esc in Options goes back.
+  useEffect(() => {
+    if (resumeIn === null || resumeIn === 0) return;
+    audio.synth(resumeIn === 1 ? 'countdown_final' : 'countdown_tick', { volume: 0.8 });
+    const timer = window.setTimeout(() => {
+      if (resumeIn > 1) {
+        setResumeIn(resumeIn - 1);
+      } else {
+        setResumeIn(null);
+        sessionRef.current?.resume();
+      }
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [resumeIn]);
+
+  // Esc / P toggle pause while this screen is active.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code !== 'Escape' && event.code !== 'KeyP') return;
       const session = sessionRef.current;
       if (!session || session.isEnded || event.repeat) return;
-      // Typing a "p" in the options form must not resume the game.
-      if (event.target instanceof HTMLInputElement && event.code === 'KeyP') return;
       event.preventDefault();
-      if (!session.isPaused) {
+      if (resumeIn !== null) {
+        // Esc during the get-ready count goes back to the pause menu.
+        if (event.code === 'Escape') setResumeIn(null);
+      } else if (!session.isPaused) {
         session.pause('manual');
-      } else if (pauseView === 'options') {
-        setPauseView('menu');
+      } else if (confirmingExit) {
+        // Esc backs out of the confirmation, not out of the pause.
+        setConfirmingExit(false);
       } else if (!window.matchMedia(PORTRAIT_QUERY).matches) {
         resume();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [pauseView, resume]);
+  }, [resume, confirmingExit, resumeIn]);
+
+  const live = load.status === 'ready' && hud && !ended ? hud : null;
+  const countdown = live ? countdownSecond(live) : null;
+  // Same red pulse as the countdown, for as long as the ship is badly hurt.
+  const lowHealth = !!live && live.hp > 0 && live.hp / live.maxHp <= LOW_HEALTH_RATIO;
 
   return (
     <section className="game-screen" aria-label="Battle">
@@ -224,15 +262,62 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
         </>
       )}
 
+      {lowHealth && (
+        <div
+          className={`danger-vignette ${paused ? 'is-paused' : ''}`}
+          aria-hidden="true"
+          data-testid="low-health"
+        />
+      )}
+      {countdown !== null && <Countdown second={countdown} paused={paused} />}
+
       {ended && (
-        <div className="end-banner" aria-hidden="true">
-          {ended === 'timeUp' ? 'Time is up!' : 'Your ship sank!'}
+        <div className={`end-sequence end-sequence--${ended}`} aria-hidden="true">
+          <div className="end-banner">
+            <span className="end-banner__title">
+              {ended === 'timeUp' ? 'Time is up!' : 'Your ship sank!'}
+            </span>
+            <span className="end-banner__sub">
+              {ended === 'timeUp' ? 'The battle is over' : 'Abandon ship!'}
+            </span>
+          </div>
         </div>
       )}
 
-      {paused && !ended && !portrait && (
-        <Dialog titleId="pause-title" describedBy="pause-desc">
-          {pauseView === 'menu' ? (
+      {paused && !ended && !portrait && resumeIn !== null && resumeIn > 0 && (
+        <div className="resume-countdown" aria-live="assertive" data-testid="resume-countdown">
+          <span key={resumeIn} className="countdown__number">
+            {resumeIn}
+          </span>
+        </div>
+      )}
+
+      {paused && !ended && !portrait && resumeIn === null && (
+        // Re-keyed so each view moves focus to its own default button.
+        <Dialog
+          key={confirmingExit ? 'exit' : 'pause'}
+          titleId="pause-title"
+          className="dialog-roomy"
+          describedBy="pause-desc"
+        >
+          {confirmingExit ? (
+            <>
+              <h2 id="pause-title" className="panel-title">
+                Leave the battle?
+              </h2>
+              <p id="pause-desc" className="tagline">
+                This battle will not be recorded.
+              </p>
+              <div className="menu-actions discard-actions">
+                <GameButton onClick={() => setConfirmingExit(false)} data-autofocus>
+                  Keep playing
+                </GameButton>
+                <GameButton variant="secondary" sound="ui_back" onClick={onExit}>
+                  Leave
+                </GameButton>
+              </div>
+            </>
+          ) : (
             <>
               <h2 id="pause-title" className="panel-title">
                 Paused
@@ -244,24 +329,10 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
                 <GameButton onClick={resume} data-autofocus>
                   Resume
                 </GameButton>
-                <GameButton sound="ui_open" onClick={() => setPauseView('options')}>
-                  Options
-                </GameButton>
-                <GameButton sound="ui_back" onClick={onExit}>
+                <GameButton sound="ui_open" onClick={() => setConfirmingExit(true)}>
                   Main menu
                 </GameButton>
               </div>
-            </>
-          ) : (
-            <>
-              <h2 id="pause-title" className="panel-title">
-                Options
-              </h2>
-              <OptionsForm
-                note="Changes apply to your next battle."
-                backLabel="Back"
-                onBack={() => setPauseView('menu')}
-              />
             </>
           )}
         </Dialog>

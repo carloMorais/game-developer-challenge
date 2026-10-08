@@ -1,5 +1,6 @@
-import { getPlayer, type GameEvent, type World } from '@pirate/game-core';
+import { getPlayer, type GameEvent, type WeaponSlot, type World } from '@pirate/game-core';
 import { audio, type LoopHandle, type SoundName } from './AudioManager';
+import type { SynthName } from './synth';
 
 export const GAME_SOUNDS: readonly SoundName[] = [
   'cannonball_water_hit_1',
@@ -26,8 +27,19 @@ export const GAME_SOUNDS: readonly SoundName[] = [
   'time_warning',
 ];
 
-const LOW_HEALTH_RATIO = 0.3;
-const TIME_WARNING_MS = 10_000;
+/** Health share at which the low-health cue plays and the screen pulses red. */
+export const LOW_HEALTH_RATIO = 0.3;
+/** The countdown ticks every second from here; the last few are louder. */
+export const COUNTDOWN_MS = 10_000;
+const FINAL_SECONDS = 3;
+
+/** Reload cues: port left, starboard right, bow centred and soft. */
+const RELOAD_CUES: Record<WeaponSlot, { synth: SynthName; pan: number; volume: number }> = {
+  port: { synth: 'reload_port', pan: -0.75, volume: 0.55 },
+  starboard: { synth: 'reload_starboard', pan: 0.75, volume: 0.55 },
+  front: { synth: 'reload_bow', pan: 0, volume: 0.4 },
+};
+const SLOTS: readonly WeaponSlot[] = ['front', 'port', 'starboard'];
 
 const pick = <T>(items: readonly T[]): T => items[Math.floor(Math.random() * items.length)]!;
 const detune = () => (Math.random() - 0.5) * 160;
@@ -41,6 +53,12 @@ export class GameAudio {
   private sailing: LoopHandle | null = null;
   private lowHealthPlayed = false;
   private timeWarningPlayed = false;
+  private lastCountdownSecond = Infinity;
+  private readonly cooling: Record<WeaponSlot, boolean> = {
+    front: false,
+    port: false,
+    starboard: false,
+  };
 
   constructor(private readonly world: World) {}
 
@@ -93,6 +111,7 @@ export class GameAudio {
         case 'matchEnded':
           this.stopLoops();
           audio.play(event.reason === 'timeUp' ? 'game_complete' : 'game_over', { volume: 0.8 });
+          audio.synth(event.reason === 'timeUp' ? 'fanfare' : 'sink_sting', { volume: 0.7 });
           break;
         default:
           break;
@@ -106,6 +125,7 @@ export class GameAudio {
     const maxSpeed = this.world.config.player.movement.maxSpeed;
     this.sailing?.setVolume(player ? (player.speed / maxSpeed) * 0.35 : 0);
     this.checkThresholds();
+    this.checkReloads();
   }
 
   pause(): void {
@@ -129,13 +149,42 @@ export class GameAudio {
       audio.play('health_low', { volume: 0.7 });
     }
     const remaining = this.world.config.match.duration * 1000 - this.world.elapsedMs;
-    if (
-      !this.timeWarningPlayed &&
-      this.world.status === 'running' &&
-      remaining <= TIME_WARNING_MS
-    ) {
+    if (!this.timeWarningPlayed && this.world.status === 'running' && remaining <= COUNTDOWN_MS) {
       this.timeWarningPlayed = true;
       audio.play('time_warning', { volume: 0.7 });
+    }
+    // One tick for every second the countdown shows (the same seconds as the
+    // on-screen number), including the first one.
+    if (this.world.status === 'running' && remaining <= COUNTDOWN_MS) {
+      const second = Math.ceil(remaining / 1000);
+      if (second >= 1 && second !== this.lastCountdownSecond) {
+        this.lastCountdownSecond = second;
+        audio.synth(second <= FINAL_SECONDS ? 'countdown_final' : 'countdown_tick', {
+          volume: second <= FINAL_SECONDS ? 0.9 : 0.8,
+        });
+      }
+    }
+  }
+
+  /**
+   * A cue when a cannon is ready again. Skipped while its trigger is held:
+   * it fires straight away, so the shot itself is the feedback.
+   */
+  private checkReloads(): void {
+    const player = getPlayer(this.world);
+    if (!player || this.world.status !== 'running') return;
+    const held: Record<WeaponSlot, boolean> = {
+      front: player.intents.fireFront,
+      port: player.intents.firePort,
+      starboard: player.intents.fireStarboard,
+    };
+    for (const slot of SLOTS) {
+      const cooling = player.cooldowns[slot] > 0;
+      if (this.cooling[slot] && !cooling && !held[slot]) {
+        const cue = RELOAD_CUES[slot];
+        audio.synth(cue.synth, { volume: cue.volume, pan: cue.pan });
+      }
+      this.cooling[slot] = cooling;
     }
   }
 

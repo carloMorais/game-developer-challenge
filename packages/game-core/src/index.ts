@@ -4,6 +4,8 @@
  */
 export * from './arena';
 export * from './config';
+export * from './difficulty';
+export * from './grade';
 export * from './loop';
 export * from './math';
 export * from './rng';

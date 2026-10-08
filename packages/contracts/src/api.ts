@@ -2,7 +2,7 @@
 export const API_BASE = '/api';
 
 export const API_ROUTES = {
-  /** GET ?sessionTime&spawnInterval&page&pageSize → Page<RankingEntry> */
+  /** GET ?difficulty&sessionTime&spawnInterval&page&pageSize → Page<RankingEntry> */
   ranking: '/ranking',
   /** GET → RankingConfigsResponse */
   rankingConfigs: '/ranking/configs',

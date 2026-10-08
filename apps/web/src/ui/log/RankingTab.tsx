@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { resolveMatchSetup } from '@pirate/game-core';
 import { configKey, type MatchConfigDto } from '@pirate/contracts';
 import { useRankingConfigsQuery, useRankingQuery } from '../../data/queries';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -9,8 +10,14 @@ import { QueryState } from './QueryState';
 /** Leaderboard for one match configuration (only equal settings compete). */
 export function RankingTab() {
   const playerId = useSettingsStore((s) => s.playerId);
-  const currentOptions = useSettingsStore((s) => s.options);
-  const [config, setConfig] = useState<MatchConfigDto>(currentOptions);
+  const difficulty = useSettingsStore((s) => s.difficulty);
+  const customOptions = useSettingsStore((s) => s.options);
+  // The leaderboard the player would compete on with their next battle.
+  const [current] = useState<MatchConfigDto>(() => ({
+    difficulty,
+    ...resolveMatchSetup(difficulty, customOptions).options,
+  }));
+  const [config, setConfig] = useState<MatchConfigDto>(current);
   const [page, setPage] = useState(1);
   const selectId = useId();
 
@@ -19,14 +26,14 @@ export function RankingTab() {
   const data = ranking.data;
 
   // The player's own settings are always selectable, even with no entries yet.
-  const options = new Map<string, MatchConfigDto>([[configKey(currentOptions), currentOptions]]);
+  const options = new Map<string, MatchConfigDto>([[configKey(current), current]]);
   for (const summary of configs.data?.configs ?? [])
     options.set(configKey(summary.config), summary.config);
 
   return (
     <div className="log-tab">
       <div className="log-toolbar">
-        <label htmlFor={selectId}>Battle settings</label>
+        <label htmlFor={selectId}>Waters</label>
         <select
           id={selectId}
           value={configKey(config)}
@@ -41,7 +48,7 @@ export function RankingTab() {
           {[...options.entries()].map(([key, value]) => (
             <option key={key} value={key}>
               {formatConfig(value)}
-              {key === configKey(currentOptions) ? ' (yours)' : ''}
+              {key === configKey(current) ? ' (yours)' : ''}
             </option>
           ))}
         </select>

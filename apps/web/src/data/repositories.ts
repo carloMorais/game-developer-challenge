@@ -56,6 +56,7 @@ export const restRankingRepository: RankingRepository = {
     request(() =>
       apiClient.get<Page<RankingEntry>>(API_ROUTES.ranking, {
         params: {
+          difficulty: config.difficulty,
           sessionTime: config.sessionTime,
           spawnInterval: config.spawnInterval,
           page,

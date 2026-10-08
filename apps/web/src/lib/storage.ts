@@ -6,7 +6,8 @@ const PREFIX = 'pirate-battle:';
 
 export const STORAGE_KEYS = {
   settings: `${PREFIX}settings:v1`,
-  lastResult: `${PREFIX}last-result:v1`,
+  lastResult: `${PREFIX}last-result:v2`,
+  progress: `${PREFIX}progress:v1`,
 } as const;
 
 export function readJson<T>(key: string, parse: (raw: unknown) => T | null): T | null {

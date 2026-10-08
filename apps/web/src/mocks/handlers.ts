@@ -2,6 +2,7 @@ import { HttpResponse, delay, http, type JsonBodyType } from 'msw';
 import {
   API_BASE,
   API_ROUTE_PATTERNS,
+  MATCH_DIFFICULTIES,
   compareRanking,
   configKey,
   paginate,
@@ -60,7 +61,7 @@ function visibleRecords(extra: { config?: MatchConfigDto; playerId?: string } = 
       records.push(...generateRecords(extra.config, 37, 9001, { idPrefix: 'many' }));
     if (extra.playerId) {
       records.push(
-        ...generateRecords({ sessionTime: 120, spawnInterval: 3 }, 23, 9002, {
+        ...generateRecords({ difficulty: 'easy', sessionTime: 90, spawnInterval: 4 }, 23, 9002, {
           playerId: extra.playerId,
           playerName: 'You',
           idPrefix: 'many-history',
@@ -79,6 +80,7 @@ export const handlers = [
   http.get(url(API_ROUTE_PATTERNS.ranking), async ({ request }) => {
     const params = new URL(request.url).searchParams;
     const config = parseMatchConfig({
+      difficulty: params.get('difficulty'),
       sessionTime: Number(params.get('sessionTime')),
       spawnInterval: Number(params.get('spawnInterval')),
     });
@@ -117,6 +119,8 @@ export const handlers = [
     }
     const configs = [...counts.values()].sort(
       (a, b) =>
+        MATCH_DIFFICULTIES.indexOf(a.config.difficulty) -
+          MATCH_DIFFICULTIES.indexOf(b.config.difficulty) ||
         a.config.sessionTime - b.config.sessionTime ||
         a.config.spawnInterval - b.config.spawnInterval,
     );
