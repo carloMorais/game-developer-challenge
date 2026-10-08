@@ -12,6 +12,8 @@ import { announce } from '../components/announcer';
 import { Dialog } from '../components/Dialog';
 import { FullscreenToggle } from '../components/FullscreenToggle';
 import { GameButton } from '../components/GameButton';
+import { LandscapeGate } from '../components/LandscapeGate';
+import { gateState, useGateState } from '../components/useGateState';
 import { Panel } from '../components/Panel';
 import { Countdown } from './Countdown';
 import { countdownSecond } from './countdownTime';
@@ -41,7 +43,6 @@ const END_DELAY_MS = 1900;
 const RESUME_COUNTDOWN_S = 3;
 /** How often HUD elements check for ships underneath (same rate as the HUD). */
 const OBSCURE_INTERVAL_MS = 100;
-const PORTRAIT_QUERY = '(orientation: portrait) and (pointer: coarse)';
 
 export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   const [load, setLoad] = useState<LoadState>({ status: 'loading', progress: 0 });
@@ -51,7 +52,8 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   /** Seconds left before play resumes after the pause menu; null when not counting. */
   const [resumeIn, setResumeIn] = useState<number | null>(null);
   const [ended, setEnded] = useState<EndReason | null>(null);
-  const [portrait, setPortrait] = useState(() => window.matchMedia(PORTRAIT_QUERY).matches);
+  const gate = useGateState();
+  const blocked = gate !== 'open';
   const screenRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<GameSession | null>(null);
@@ -141,7 +143,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
     session
       .mount(container)
       .then(() => {
-        if (window.matchMedia(PORTRAIT_QUERY).matches) session.pause('orientation');
+        if (gateState() !== 'open') session.pause('orientation');
         sound?.start();
       })
       .catch((error: unknown) => {
@@ -160,16 +162,10 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
     };
   }, [assets, config, seed]);
 
-  // Phones: the arena needs landscape. Turning to portrait pauses the battle.
+  // Phones: the arena needs fullscreen landscape. Leaving it pauses the battle.
   useEffect(() => {
-    const query = window.matchMedia(PORTRAIT_QUERY);
-    const onChange = () => {
-      setPortrait(query.matches);
-      if (query.matches) sessionRef.current?.pause('orientation');
-    };
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-  }, []);
+    if (blocked) sessionRef.current?.pause('orientation');
+  }, [blocked]);
 
   const retry = () => {
     setLoad({ status: 'loading', progress: 0 });
@@ -212,7 +208,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
       } else if (confirmingExit) {
         // Esc backs out of the confirmation, not out of the pause.
         setConfirmingExit(false);
-      } else if (!window.matchMedia(PORTRAIT_QUERY).matches) {
+      } else if (gateState() === 'open') {
         resume();
       }
     };
@@ -222,7 +218,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
 
   const live = load.status === 'ready' && hud && !ended ? hud : null;
   const countdown = live ? countdownSecond(live) : null;
-  // Same red pulse as the countdown, for as long as the ship is badly hurt.
+  // Red edge pulse, only while the ship is badly hurt.
   const lowHealth = !!live && live.hp > 0 && live.hp / live.maxHp <= LOW_HEALTH_RATIO;
 
   return (
@@ -294,7 +290,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
         </div>
       )}
 
-      {paused && !ended && !portrait && resumeIn !== null && resumeIn > 0 && (
+      {paused && !ended && !blocked && resumeIn !== null && resumeIn > 0 && (
         <div className="resume-countdown" aria-live="assertive" data-testid="resume-countdown">
           <span key={resumeIn} className="countdown__number">
             {resumeIn}
@@ -302,7 +298,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
         </div>
       )}
 
-      {paused && !ended && !portrait && resumeIn === null && (
+      {paused && !ended && !blocked && resumeIn === null && (
         // Re-keyed so each view moves focus to its own default button.
         <Dialog
           key={confirmingExit ? 'exit' : 'pause'}
@@ -349,12 +345,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
         </Dialog>
       )}
 
-      {portrait && (
-        <div className="rotate-overlay" role="alert">
-          <div className="rotate-overlay__icon" aria-hidden="true" />
-          <p>Rotate your device to landscape to keep sailing.</p>
-        </div>
-      )}
+      <LandscapeGate state={gate} />
     </section>
   );
 }

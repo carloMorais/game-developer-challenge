@@ -31,18 +31,22 @@ async function expectNoScroll(page: Page, selector: string): Promise<void> {
 }
 
 test.describe('14. Mobile: fullscreen, touch overlay, HUD fade, short screens @mobile', () => {
-  test('Set sail requests fullscreen on touch devices', async ({ page }) => {
+  test('Play requests fullscreen on touch devices', async ({ page }) => {
     await stubFullscreen(page);
     await openApp(page, { noSpawns: true });
-    await startMatch(page);
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
     expect(await fullscreenCalls(page)).toEqual(['request']);
   });
 
-  test('turning off autoFullscreen keeps the page windowed', async ({ page }) => {
+  test('portrait covers the setup screen until the phone is turned', async ({ page }) => {
     await stubFullscreen(page);
-    await openApp(page, { noSpawns: true, settings: { autoFullscreen: false } });
-    await startMatch(page);
-    expect(await fullscreenCalls(page)).toEqual([]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, { noSpawns: true });
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect(page.getByTestId('landscape-gate')).toBeVisible();
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(page.getByTestId('landscape-gate')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Set sail' })).toBeVisible();
   });
 
   test('touch buttons overlay the full-screen arena: large and translucent', async ({ page }) => {

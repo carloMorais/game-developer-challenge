@@ -1,4 +1,5 @@
 import { navigate } from '../../app/router';
+import { enterBattleFullscreen } from '../../lib/fullscreen';
 import { GameButton } from '../components/GameButton';
 import { Panel } from '../components/Panel';
 import { ScreenLayout } from './ScreenLayout';
@@ -20,7 +21,14 @@ export function MenuScreen() {
           </h1>
           <p className="tagline">Set sail. Take command.</p>
           <nav className="menu-actions" aria-label="Main menu">
-            <GameButton onClick={() => navigate({ name: 'setup' })} data-autofocus>
+            <GameButton
+              onClick={() => {
+                // Phones pick the difficulty already fullscreen and in landscape.
+                enterBattleFullscreen();
+                navigate({ name: 'setup' });
+              }}
+              data-autofocus
+            >
               Play
             </GameButton>
             <GameButton onClick={() => navigate({ name: 'options' })}>Options</GameButton>

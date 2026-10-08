@@ -85,7 +85,6 @@ export interface OpenOptions {
     /** Difficulty preselected on the setup screen (default: Custom, i.e. the options above). */
     difficulty?: 'easy' | 'normal' | 'challenging' | 'hard' | 'custom';
     howToPlayOpen?: boolean;
-    autoFullscreen?: boolean;
   };
 }
 
@@ -114,7 +113,6 @@ export async function openApp(page: Page, options: OpenOptions = {}): Promise<vo
     muted: options.settings?.muted ?? true,
     difficulty: options.settings?.difficulty ?? 'custom',
     howToPlayOpen: options.settings?.howToPlayOpen ?? true,
-    autoFullscreen: options.settings?.autoFullscreen ?? true,
   };
   // Only on the first load of the context, so reload tests keep their data.
   await page.addInitScript((value) => {

@@ -82,23 +82,30 @@ export function onFullscreenChange(listener: () => void, doc: Document = documen
   };
 }
 
-/** Set while the battle itself put the page in fullscreen. */
+/** Set while the game itself put the page in fullscreen. */
 let enteredForBattle = false;
+/** A fullscreen request is in flight (a double tap must not send two). */
+let requesting = false;
+
+export function isTouchDevice(): boolean {
+  return window.matchMedia(COARSE_POINTER_QUERY).matches;
+}
 
 /**
- * Battle start (Set sail / Play again click): go fullscreen on touch devices
- * when the player allows it. Fullscreen needs this user gesture, so it cannot
- * move into an effect.
+ * Play / Set sail / Play again click: phones always play fullscreen and in
+ * landscape. Fullscreen needs this user gesture, so it cannot move into an effect.
  */
-export function autoEnterFullscreen(allowed: boolean): void {
-  if (!allowed || !window.matchMedia(COARSE_POINTER_QUERY).matches || isFullscreen()) return;
+export function enterBattleFullscreen(): void {
+  if (!isTouchDevice() || isFullscreen() || requesting) return;
+  requesting = true;
   enteredForBattle = true;
   void enterFullscreen().then((ok) => {
+    requesting = false;
     if (!ok) enteredForBattle = false;
   });
 }
 
-/** Back on the menus: leave the fullscreen the battle entered (not one the player chose). */
+/** Back on the menus: leave the fullscreen the game entered (not one the player chose). */
 export function exitBattleFullscreen(): void {
   if (!enteredForBattle) return;
   enteredForBattle = false;
