@@ -6,8 +6,16 @@
     <meta name="theme-color" content="#1b2a3a" />
     <meta name="description" content="Pirate Battle, a top-down 2D naval shooter." />
     <link rel="icon" type="image/png" href="/game/favicon.png" />
-    <!-- The menu backdrop is the largest paint: fetch it with the HTML. -->
-    <link rel="preload" as="image" href="/game/ui_scene_background.png" />
+    <!-- Fetch the menu's first-paint images with the HTML, before the app renders.
+         The title is the LCP element; the srcset must match MenuScreen's. -->
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
+      imagesrcset="/game/ui/1x/title_pirate_battle.webp 1x, /game/ui/2x/title_pirate_battle.webp 2x"
+      fetchpriority="high"
+    />
+    <link rel="preload" as="image" type="image/webp" href="/game/ui_scene_background.webp" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />

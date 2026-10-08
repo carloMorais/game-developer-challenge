@@ -5,6 +5,8 @@
  * - Converts the Starling/Sparrow XML ship atlas into a PixiJS JSON atlas.
  * - Generates a JSON atlas for the 64x64 tilesheet grid.
  * - Re-points the UI atlas JSON (already PixiJS/TexturePacker format) at the copied image.
+ * - Encodes WebP copies of the DOM images (UI 1x/2x, menu background); these are
+ *   what the CSS and the menu title load. The PNGs stay alongside them.
  *
  * Note: the source "retina" ship sheet has the same size and coordinates as the
  * default one, so only the default ship atlas is emitted.
@@ -12,6 +14,7 @@
 import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = resolve(here, '../../../assets');
@@ -24,6 +27,14 @@ const TILE_ROWS = 6;
 async function copy(from, to) {
   await mkdir(dirname(join(out, to)), { recursive: true });
   await copyFile(join(src, from), join(out, to));
+}
+
+/** Copies a PNG and writes a WebP next to it. */
+async function copyWithWebp(from, to) {
+  await copy(from, to);
+  await sharp(join(src, from))
+    .webp({ quality: 82, alphaQuality: 90, effort: 6 })
+    .toFile(join(out, to.replace(/\.png$/, '.webp')));
 }
 
 async function writeJson(to, data) {
@@ -99,7 +110,9 @@ async function main() {
     for (const group of ['menu', 'controls', 'hud']) {
       const files = await readdir(join(src, 'png', density, 'ui', group));
       await Promise.all(
-        files.map((file) => copy(join('png', density, 'ui', group, file), join(dir, file))),
+        files.map((file) =>
+          copyWithWebp(join('png', density, 'ui', group, file), join(dir, file)),
+        ),
       );
     }
   }
@@ -108,7 +121,7 @@ async function main() {
   await copy('png/default/ships/ship_5.png', 'favicon.png');
 
   // Menu background and sounds.
-  await copy('ui_scene_background.png', 'ui_scene_background.png');
+  await copyWithWebp('ui_scene_background.png', 'ui_scene_background.png');
   const sounds = await readdir(join(src, 'sounds'));
   await Promise.all(sounds.map((file) => copy(join('sounds', file), join('sounds', file))));
 
