@@ -38,10 +38,13 @@ test.describe('7. Pause, focus loss and resume without timer drift', () => {
     await page.waitForTimeout(500);
     const resumed = await gameState(page);
     const realSinceResume = Date.now() - resumedAt;
-    // Only time after resuming counts, never the 1.5 s spent paused.
+    // Only time after resuming counts, never the 1.5 s spent paused. resumedAt is
+    // taken after the poll round-trips to Node, so on slow runners the battle has
+    // already run a few frames by then; 300 ms of slack absorbs that while any
+    // leaked pause time (>= 1.5 s) still fails.
     const simulated = resumed.elapsedMs - frozen.elapsedMs;
     expect(simulated).toBeGreaterThan(200);
-    expect(simulated).toBeLessThanOrEqual(realSinceResume + 50);
+    expect(simulated).toBeLessThanOrEqual(realSinceResume + 300);
   });
 
   test('losing focus pauses automatically and resuming needs an action', async ({ page }) => {
