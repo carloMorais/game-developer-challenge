@@ -20,6 +20,18 @@ const RESULT = {
 };
 
 test.describe('Visual regression', () => {
+  // Phones only show setup and result in fullscreen; headless cannot enter it,
+  // so capture the screens as a fullscreen phone would see them.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Document.prototype, 'fullscreenElement', {
+        get(this: Document) {
+          return this.documentElement;
+        },
+      });
+    });
+  });
+
   test('main menu', async ({ page }) => {
     await openApp(page, { test: false });
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();

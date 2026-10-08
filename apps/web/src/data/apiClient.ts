@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { API_BASE, type ApiErrorBody } from '@pirate/contracts';
 
 /** Requests slower than this are abandoned and treated as a timeout. */
@@ -9,6 +9,41 @@ export const apiClient = axios.create({
   timeout: REQUEST_TIMEOUT_MS,
   headers: { Accept: 'application/json' },
 });
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Set on the single retry made after recovering the transport. */
+    transportRetried?: boolean;
+  }
+}
+
+let recoverTransport: (() => Promise<void>) | null = null;
+
+/**
+ * Registers how to bring the API back when a response did not come from it
+ * (the mock worker lost track of this page). Called once, then the request is
+ * retried a single time.
+ */
+export function setTransportRecovery(recover: (() => Promise<void>) | null): void {
+  recoverTransport = recover;
+}
+
+function isJsonResponse(response: AxiosResponse): boolean {
+  const type: unknown = response.headers['content-type'];
+  return typeof type === 'string' && type.includes('json');
+}
+
+/**
+ * A non-JSON answer means the request never reached the API (e.g. the host's
+ * HTML fallback or a 405 page). Never hand that body to the UI.
+ */
+async function handleForeignResponse(config: InternalAxiosRequestConfig): Promise<AxiosResponse> {
+  if (recoverTransport && !config.transportRetried) {
+    await recoverTransport();
+    return apiClient.request({ ...config, transportRetried: true });
+  }
+  throw new ApiError('network', 'Could not reach the server.');
+}
 
 export type ApiErrorKind = 'timeout' | 'network' | 'client' | 'server' | 'cancelled' | 'unknown';
 
@@ -58,3 +93,13 @@ export function toApiError(error: unknown): ApiError {
   }
   return new ApiError('unknown', 'Something went wrong.');
 }
+
+apiClient.interceptors.response.use(
+  (response) => (isJsonResponse(response) ? response : handleForeignResponse(response.config)),
+  (error: unknown) => {
+    if (error instanceof AxiosError && error.response && error.config) {
+      if (!isJsonResponse(error.response)) return handleForeignResponse(error.config);
+    }
+    throw error;
+  },
+);

@@ -6,6 +6,7 @@ import { queryClient } from './data/queryClient';
 import { flushPendingMatches, registerMatch, watchConnectivity } from './data/registration';
 import { testMode } from './lib/testMode';
 import { startMocks } from './mocks/browser';
+import { ErrorBoundary } from './ui/components/ErrorBoundary';
 import './styles.css';
 
 declare global {
@@ -25,7 +26,9 @@ async function bootstrap() {
   createRoot(container).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
       </QueryClientProvider>
     </StrictMode>,
   );
