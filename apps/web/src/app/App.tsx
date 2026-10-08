@@ -13,6 +13,7 @@ import {
 import { UI_SOUNDS, audio } from '../game/audio/AudioManager';
 import { GAME_SOUNDS } from '../game/audio/GameAudio';
 import type { MatchOutcome } from '../game/session/GameSession';
+import { autoEnterFullscreen, exitBattleFullscreen } from '../lib/fullscreen';
 import { randomId } from '../lib/storage';
 import { testMode } from '../lib/testMode';
 import { registerMatch } from '../data/registration';
@@ -141,8 +142,14 @@ export function App() {
 
   useScreenFocus(route);
 
+  // Fullscreen lasts from Set sail through Play again; any other screen leaves it.
+  useEffect(() => {
+    if (route.name !== 'play' && route.name !== 'result') exitBattleFullscreen();
+  }, [route.name]);
+
   const play = (difficulty: Difficulty) => {
     const settings = useSettingsStore.getState();
+    autoEnterFullscreen(settings.autoFullscreen);
     // Never start a locked difficulty (e.g. stale saved choice): fall back to Easy.
     const chosen = useProgressStore.getState().isUnlocked(difficulty) ? difficulty : 'easy';
     settings.setDifficulty(chosen);

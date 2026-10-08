@@ -89,6 +89,8 @@ p {
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   z-index: 5;
+  display: flex;
+  gap: 8px;
 }
 
 .menu-layout {
@@ -1578,20 +1580,50 @@ kbd {
   }
 }
 
+/* Overlaid on the full-screen arena: big, translucent, firmer when pressed. */
 .touch-cluster {
-  /* Fits the 132px side gutter reserved by GameScreen (TOUCH_GUTTER). */
+  --touch-size: clamp(72px, 19vmin, 80px);
+  /* Wide gaps: each button hit area reaches 8px past its art (>= 88px). */
   display: grid;
-  grid-template-columns: 56px 56px;
-  grid-template-rows: 56px 56px;
-  gap: 8px 6px;
+  grid-template-columns: var(--touch-size) var(--touch-size);
+  grid-template-rows: var(--touch-size) var(--touch-size);
+  gap: 18px;
   pointer-events: auto;
+  transition: opacity 150ms ease;
 }
 
 .touch-btn {
-  width: 56px;
-  height: 56px;
-  opacity: 0.92;
+  position: relative;
+  width: var(--touch-size);
+  height: var(--touch-size);
+  opacity: 0.38;
+  box-shadow: 0 0 0 6px rgb(10 20 32 / 0.25);
   touch-action: none;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.touch-btn::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+}
+
+.touch-btn .ui-sprite,
+.touch-btn > span {
+  filter: drop-shadow(0 0 2px #000) drop-shadow(0 1px 1px #000);
+}
+
+.touch-btn[data-pressed='true'] {
+  opacity: 0.85;
+  transform: scale(0.92);
+}
+
+/* A ship under a cluster: fade further so it stays visible (presses still count). */
+.touch-cluster[data-obscured='true'] .touch-btn:not([data-pressed='true']) {
+  opacity: 0.15;
 }
 
 .touch-btn--turn-left,
@@ -1608,6 +1640,15 @@ kbd {
 .touch-btn--turn-right,
 .touch-btn--starboard {
   grid-area: 2 / 2;
+}
+
+/* HUD elements with a ship underneath fade out of the way (still tappable). */
+[data-obscurable] {
+  transition: opacity 150ms ease;
+}
+
+.hud [data-obscured='true'] {
+  opacity: 0.25;
 }
 
 /* ---------- Short landscape screens (phones) ---------- */
@@ -1637,6 +1678,278 @@ kbd {
   .controls-help__intro {
     display: none;
   }
+
+  /* Compact HUD: smaller bars and counters, slightly see-through. */
+  .hud-health {
+    transform: scale(0.78);
+    transform-origin: top left;
+  }
+
+  .hud-right {
+    gap: 4px;
+    transform: scale(0.8);
+    transform-origin: top right;
+  }
+
+  .hud-health,
+  .hud-counter {
+    opacity: 0.88;
+  }
+
+  .panel {
+    border-width: 24px 20px;
+  }
+
+  .panel__content {
+    padding: 2px;
+  }
+
+  .panel-title {
+    font-size: 1.3rem;
+  }
+
+  .tagline {
+    font-size: 0.75rem;
+  }
+
+  .menu-title img {
+    width: 180px;
+  }
+
+  .menu-actions {
+    gap: 2px;
+  }
+
+  .game-btn--large {
+    width: 160px;
+    font-size: 0.95rem;
+  }
+
+  .game-btn--small {
+    width: 150px;
+    font-size: 0.75rem;
+  }
+
+  .menu-layout {
+    gap: 10px;
+  }
+
+  /* Dialogs fit the screen; long content scrolls with the actions pinned below. */
+  .game-overlay,
+  .dialog-backdrop {
+    padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+      max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .dialog {
+    max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow: auto;
+  }
+
+  .dialog-backdrop--top .panel__content,
+  .dialog-roomy .panel__content {
+    gap: 8px;
+    padding: 4px 12px;
+  }
+
+  .dialog .options-form__actions,
+  .screen .options-form__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    padding: 4px 0;
+    background: var(--navy-deep);
+    border-radius: 10px;
+  }
+
+  .options-form {
+    gap: 6px;
+  }
+
+  .options-form__columns {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+  }
+
+  .options-form__column {
+    gap: 6px;
+  }
+
+  .ship-preview {
+    transform: scale(0.75);
+    margin: -10px;
+  }
+
+  /* Result: grade, unlock and actions | report card. */
+  .result-panel {
+    width: min(720px, 100%);
+  }
+
+  .result-panel .panel__content {
+    grid-template-columns: auto auto;
+    justify-content: center;
+    align-items: center;
+    column-gap: 24px;
+    row-gap: 4px;
+  }
+
+  .result-panel .panel__content > * {
+    grid-column: 1;
+  }
+
+  .result-panel .panel__content > .report-card-frame {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    width: 280px;
+  }
+
+  .result-panel .grade-stamp {
+    width: 92px;
+    height: 92px;
+    font-size: 2.4rem;
+  }
+
+  .report-card__row {
+    padding: 2px 0;
+    font-size: 0.85rem;
+  }
+
+  .result-waters {
+    margin-top: 0;
+  }
+
+  .ship-designer {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 4px 8px 8px;
+  }
+
+  .field__hint {
+    font-size: 0.72rem;
+  }
+
+  .setup-card {
+    gap: 2px;
+    padding: 6px 14px 8px;
+  }
+
+  .setup-card__lock,
+  .setup-card__best {
+    margin-top: 0;
+  }
+
+  .setup-panel .panel-title {
+    font-size: 1.15rem;
+  }
+
+  .setup-panel .panel__content {
+    gap: 4px;
+  }
+
+  .setup-card__desc {
+    font-size: 0.75rem;
+  }
+
+  .setup-panel .controls-help {
+    padding-top: 6px;
+  }
+
+  .controls-help__title {
+    font-size: 1rem;
+  }
+
+  .setup .menu-actions,
+  .result-panel .menu-actions {
+    grid-auto-flow: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.setup__dots {
+  display: none;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setup__dots li {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(216 203 169 / 0.35);
+}
+
+.setup__dots li.is-active {
+  background: var(--ink-gold);
+}
+
+/* ---------- Difficulty carousel (phones) ---------- */
+@media (max-height: 520px), (max-width: 720px) {
+  .setup__cards {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 6px 14% 8px;
+    /* Edges fade so the next card reads as more to scroll. */
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .setup__cards::-webkit-scrollbar {
+    display: none;
+  }
+
+  .setup-card,
+  .setup-card-wrap {
+    flex: 0 0 72%;
+    scroll-snap-align: center;
+  }
+
+  .setup-card-wrap > .setup-card {
+    flex: 1;
+  }
+
+  .setup-card:hover:not(.is-locked) {
+    transform: none;
+  }
+
+  .setup__separator {
+    flex: 0 0 4px;
+    height: auto;
+    margin: 0;
+    background: none;
+  }
+
+  .setup__dots {
+    display: flex;
+  }
+
+  .setup {
+    gap: 6px;
+    padding: 0;
+  }
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.toggle-field input {
+  width: 22px;
+  height: 22px;
+  accent-color: #f1b53a;
 }
 
 /* ---------- Captain's log tables ---------- */

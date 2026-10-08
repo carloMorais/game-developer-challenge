@@ -7,6 +7,7 @@ import {
   type MatchOptions,
 } from '@pirate/game-core';
 import { DEFAULT_PLAYER_LOOK, parseShipLook, type ShipLook } from '../game/shipLook';
+import { COARSE_POINTER_QUERY } from '../lib/fullscreen';
 import { STORAGE_KEYS, isRecord, randomId, readJson, writeJson } from '../lib/storage';
 
 export const PLAYER_NAME_LIMITS = { min: 1, max: 20 } as const;
@@ -33,6 +34,8 @@ interface PersistedSettings {
   howToPlayOpen: boolean;
   /** The player's ship: sail, pennant and hull. */
   shipLook: ShipLook;
+  /** Touch devices: go fullscreen when a battle starts. */
+  autoFullscreen: boolean;
 }
 
 function parseSettings(raw: unknown): Partial<PersistedSettings> | null {
@@ -53,9 +56,14 @@ function parseSettings(raw: unknown): Partial<PersistedSettings> | null {
   if (typeof raw.muted === 'boolean') result.muted = raw.muted;
   if (isDifficulty(raw.difficulty)) result.difficulty = raw.difficulty;
   if (typeof raw.howToPlayOpen === 'boolean') result.howToPlayOpen = raw.howToPlayOpen;
+  if (typeof raw.autoFullscreen === 'boolean') result.autoFullscreen = raw.autoFullscreen;
   const shipLook = parseShipLook(raw.shipLook);
   if (shipLook) result.shipLook = shipLook;
   return result;
+}
+
+function isCoarsePointer(): boolean {
+  return typeof window !== 'undefined' && !!window.matchMedia?.(COARSE_POINTER_QUERY).matches;
 }
 
 function loadSettings(): PersistedSettings {
@@ -66,8 +74,10 @@ function loadSettings(): PersistedSettings {
     options: stored.options ?? { ...DEFAULT_MATCH_OPTIONS },
     muted: stored.muted ?? false,
     difficulty: stored.difficulty ?? 'easy',
-    howToPlayOpen: stored.howToPlayOpen ?? true,
+    // Collapsed by default on touch devices: short screens need the room.
+    howToPlayOpen: stored.howToPlayOpen ?? !isCoarsePointer(),
     shipLook: stored.shipLook ?? { ...DEFAULT_PLAYER_LOOK },
+    autoFullscreen: stored.autoFullscreen ?? true,
   };
   // Persist a freshly generated player id right away so it stays stable.
   if (!stored.playerId) writeJson(STORAGE_KEYS.settings, settings);
@@ -85,10 +95,21 @@ interface SettingsState extends PersistedSettings {
   setHowToPlayOpen(open: boolean): void;
   /** Saves the player's ship; returns false if storage failed. */
   setShipLook(look: ShipLook): boolean;
+  /** Returns false if storage failed. */
+  setAutoFullscreen(on: boolean): boolean;
 }
 
 function persist(state: PersistedSettings): boolean {
-  const { playerId, playerName, options, muted, difficulty, howToPlayOpen, shipLook } = state;
+  const {
+    playerId,
+    playerName,
+    options,
+    muted,
+    difficulty,
+    howToPlayOpen,
+    shipLook,
+    autoFullscreen,
+  } = state;
   return writeJson(STORAGE_KEYS.settings, {
     playerId,
     playerName,
@@ -97,6 +118,7 @@ function persist(state: PersistedSettings): boolean {
     difficulty,
     howToPlayOpen,
     shipLook,
+    autoFullscreen,
   });
 }
 
@@ -121,6 +143,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
   setShipLook: (shipLook) => {
     set({ shipLook: { ...shipLook } });
+    return persist(get());
+  },
+  setAutoFullscreen: (autoFullscreen) => {
+    set({ autoFullscreen });
     return persist(get());
   },
 }));

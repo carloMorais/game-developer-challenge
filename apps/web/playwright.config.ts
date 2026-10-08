@@ -21,7 +21,14 @@ export default defineConfig({
   reporter: [['html', { open: 'never' }], ['list']],
   expect: {
     timeout: 10_000,
-    toHaveScreenshot: { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 },
+    // Tight: a 1% budget let a stale result baseline slip through. `threshold`
+    // absorbs anti-aliasing noise per pixel instead.
+    toHaveScreenshot: {
+      animations: 'disabled',
+      caret: 'hide',
+      maxDiffPixelRatio: 0.002,
+      threshold: 0.2,
+    },
   },
   use: {
     baseURL: `http://localhost:${port}`,

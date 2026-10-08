@@ -352,6 +352,7 @@ test(`memory after ${CYCLES} start / play / exit cycles`, async ({ page }, testI
     const probe = await collectProbe(page);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Leave' }).click();
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
     // Let the last rAF/timer callbacks of the destroyed session run out.
     await page.waitForTimeout(500);

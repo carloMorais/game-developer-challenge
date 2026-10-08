@@ -48,7 +48,11 @@ export interface GameState {
 }
 
 interface PirateWindow {
-  __pirate?: { advance(ms: number): void; state(): GameState };
+  __pirate?: {
+    advance(ms: number): void;
+    state(): GameState;
+    placePlayerAt(x: number, y: number): void;
+  };
   __pirateMocks?: {
     setScenario(id: string): void;
     reset(): void;
@@ -81,6 +85,7 @@ export interface OpenOptions {
     /** Difficulty preselected on the setup screen (default: Custom, i.e. the options above). */
     difficulty?: 'easy' | 'normal' | 'challenging' | 'hard' | 'custom';
     howToPlayOpen?: boolean;
+    autoFullscreen?: boolean;
   };
 }
 
@@ -109,6 +114,7 @@ export async function openApp(page: Page, options: OpenOptions = {}): Promise<vo
     muted: options.settings?.muted ?? true,
     difficulty: options.settings?.difficulty ?? 'custom',
     howToPlayOpen: options.settings?.howToPlayOpen ?? true,
+    autoFullscreen: options.settings?.autoFullscreen ?? true,
   };
   // Only on the first load of the context, so reload tests keep their data.
   await page.addInitScript((value) => {
@@ -127,6 +133,14 @@ export async function startMatch(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Set sail' }).click();
   await expect(page.getByTestId('hud-score')).toBeVisible({ timeout: 30_000 });
   await page.waitForFunction(() => !!(window as PirateWindow).__pirate);
+}
+
+/** Moves the player ship under a screen point (CSS pixels). */
+export function placePlayerAt(page: Page, x: number, y: number): Promise<void> {
+  return page.evaluate(
+    (point) => (window as PirateWindow).__pirate!.placePlayerAt(point.x, point.y),
+    { x, y },
+  );
 }
 
 export function advance(page: Page, ms: number): Promise<void> {
