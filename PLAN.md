@@ -87,6 +87,7 @@ packages/
 | 5   | E2E tests          | 1 d     | The 12 required areas, desktop + mobile Chromium, visual baselines (menu, arena, result), HTML report + traces                                                                                                                                                                                                     |
 | 6   | Perf, docs, deploy | 0.5–1 d | 3-min profiling (FPS, p95 frame time, entity count), 5-cycle memory check, README, ARCHITECTURE.md, licenses, Vercel deploy                                                                                                                                                                                        |
 | 7   | Gameplay polish    | 1 d     | Difficulty presets + unlocks, final countdown, end-of-match transition, result summary with grades, collapsible How to play, ships assembled from parts with customisation, cannon reload feedback with per-side sounds, castaways, hit rocking, pause get-ready countdown, result cross-fade, reactive ship wakes |
+| 8   | Mobile & release   | 1–1.5 d | Fullscreen + landscape lock on Set sail, installable PWA, larger translucent overlaid touch buttons, HUD fades under ships, short-screen dialogs, difficulty carousel, re-profiling, tighter visual tolerance, Lighthouse/a11y. See [docs/PHASE-8.md](docs/PHASE-8.md)                                             |
 
 Phase 1 and 2 may be interleaved so gameplay is visible early for feel tuning.
 
