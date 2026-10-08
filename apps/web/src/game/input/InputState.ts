@@ -1,12 +1,7 @@
 import { IDLE_INTENTS, type ShipIntents } from '@pirate/game-core';
 
 export type GameAction =
-  | 'forward'
-  | 'turnLeft'
-  | 'turnRight'
-  | 'fireFront'
-  | 'firePort'
-  | 'fireStarboard';
+  'forward' | 'turnLeft' | 'turnRight' | 'fireFront' | 'firePort' | 'fireStarboard';
 
 export type InputSource = 'keyboard' | 'touch';
 

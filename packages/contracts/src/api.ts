@@ -37,12 +37,7 @@ export interface Page<T> {
 }
 
 export type ApiErrorCode =
-  | 'BAD_REQUEST'
-  | 'NOT_FOUND'
-  | 'CONFLICT'
-  | 'RATE_LIMITED'
-  | 'INTERNAL'
-  | 'UNAVAILABLE';
+  'BAD_REQUEST' | 'NOT_FOUND' | 'CONFLICT' | 'RATE_LIMITED' | 'INTERNAL' | 'UNAVAILABLE';
 
 export interface ApiErrorBody {
   error: { code: ApiErrorCode; message: string };
