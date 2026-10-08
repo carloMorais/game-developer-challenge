@@ -3,7 +3,6 @@ import type { EndReason, GameConfig } from '@pirate/game-core';
 import { audio } from '../../game/audio/AudioManager';
 import { GAME_SOUNDS, GameAudio, LOW_HEALTH_RATIO } from '../../game/audio/GameAudio';
 import { loadGameAssets, type GameAssets } from '../../game/assets/loadGameAssets';
-import { NO_INSETS } from '../../game/render/viewport';
 import { GameSession, type MatchOutcome } from '../../game/session/GameSession';
 import { installTestHooks } from '../../game/session/testHooks';
 import { testMode } from '../../lib/testMode';
@@ -11,13 +10,14 @@ import { useMatchStore } from '../../store/matchStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { announce } from '../components/announcer';
 import { Dialog } from '../components/Dialog';
+import { FullscreenToggle } from '../components/FullscreenToggle';
 import { GameButton } from '../components/GameButton';
 import { Panel } from '../components/Panel';
 import { Countdown } from './Countdown';
 import { countdownSecond } from './countdownTime';
 import { Hud } from './Hud';
+import { ObscureWatcher, type ScreenCircle } from './obscure';
 import { TouchControls } from './TouchControls';
-import { COARSE_POINTER_QUERY, TOUCH_GUTTER } from './touchLayout';
 import { useMatchAnnouncements } from './useMatchAnnouncements';
 
 interface GameScreenProps {
@@ -39,6 +39,8 @@ type LoadState =
 const END_DELAY_MS = 1900;
 /** Get-ready seconds between leaving the pause menu and play resuming. */
 const RESUME_COUNTDOWN_S = 3;
+/** How often HUD elements check for ships underneath (same rate as the HUD). */
+const OBSCURE_INTERVAL_MS = 100;
 const PORTRAIT_QUERY = '(orientation: portrait) and (pointer: coarse)';
 
 export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
@@ -50,6 +52,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   const [resumeIn, setResumeIn] = useState<number | null>(null);
   const [ended, setEnded] = useState<EndReason | null>(null);
   const [portrait, setPortrait] = useState(() => window.matchMedia(PORTRAIT_QUERY).matches);
+  const screenRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<GameSession | null>(null);
   const notifyEnd = useEffectEvent((outcome: MatchOutcome) => onEnd(outcome));
@@ -86,11 +89,24 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   const assets = load.status === 'ready' ? load.assets : null;
   useEffect(() => {
     const container = containerRef.current;
-    if (!assets || !container) return;
+    const screen = screenRef.current;
+    if (!assets || !container || !screen) return;
 
     useMatchStore.getState().reset();
     let endTimer: number | undefined;
     let sound: GameAudio | null = null;
+    // HUD elements and touch clusters fade while a ship is underneath them.
+    const watcher = new ObscureWatcher(screen);
+    const circles: ScreenCircle[] = [];
+    let lastObscureAt = -Infinity;
+    const manualClock = testMode.enabled && testMode.clock === 'manual';
+    const checkObscured = () => {
+      const now = performance.now();
+      // The manual (test) clock renders on demand: check every frame there.
+      if (!manualClock && now - lastObscureAt < OBSCURE_INTERVAL_MS) return;
+      lastObscureAt = now;
+      watcher.update(session.getShipScreenCircles(circles));
+    };
     const session = new GameSession(
       {
         config,
@@ -108,7 +124,10 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
           else sound?.resume();
         },
         onEvents: (events) => sound?.handle(events),
-        onFrame: () => sound?.update(),
+        onFrame: () => {
+          sound?.update();
+          checkObscured();
+        },
         onEnd: (outcome) => {
           setEnded(outcome.endReason);
           endTimer = window.setTimeout(() => notifyEnd(outcome), END_DELAY_MS);
@@ -118,15 +137,6 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
     sound = new GameAudio(session.world);
     sessionRef.current = session;
     const uninstallTestHooks = testMode.enabled ? installTestHooks(session) : null;
-
-    // Keep the arena clear of the on-screen buttons on touch devices.
-    const coarse = window.matchMedia(COARSE_POINTER_QUERY);
-    const applyInsets = () =>
-      session.setInsets(
-        coarse.matches ? { top: 0, bottom: 0, left: TOUCH_GUTTER, right: TOUCH_GUTTER } : NO_INSETS,
-      );
-    applyInsets();
-    coarse.addEventListener('change', applyInsets);
 
     session
       .mount(container)
@@ -141,7 +151,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
 
     return () => {
       window.clearTimeout(endTimer);
-      coarse.removeEventListener('change', applyInsets);
+      watcher.dispose();
       uninstallTestHooks?.();
       sound?.dispose();
       session.destroy();
@@ -216,7 +226,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
   const lowHealth = !!live && live.hp > 0 && live.hp / live.maxHp <= LOW_HEALTH_RATIO;
 
   return (
-    <section className="game-screen" aria-label="Battle">
+    <section ref={screenRef} className="game-screen" aria-label="Battle">
       <div ref={containerRef} className="game-canvas" />
 
       {load.status === 'loading' && (
@@ -333,6 +343,7 @@ export function GameScreen({ config, seed, onEnd, onExit }: GameScreenProps) {
                   Main menu
                 </GameButton>
               </div>
+              <FullscreenToggle size={44} />
             </>
           )}
         </Dialog>

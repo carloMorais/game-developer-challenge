@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T17:47:58.591Z",
+  "generatedAt": "2026-10-08T11:49:44.513Z",
   "environment": {
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36",
     "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009B41) Direct3D11 vs_5_0 ps_5_0, D3D11)",
@@ -19,27 +19,27 @@
     "autopilot": "spray"
   },
   "growthFromCycle1ToLast": {
-    "jsHeapUsedMb": 0.87,
-    "domNodes": -1,
-    "jsEventListeners": 3
+    "jsHeapUsedMb": 0.91,
+    "domNodes": 0,
+    "jsEventListeners": 0
   },
   "snapshots": [
     {
       "label": "menu (before any match)",
-      "jsHeapUsedMb": 3.66,
-      "jsHeapTotalMb": 4.54,
-      "domNodes": 164,
-      "jsEventListeners": 179,
+      "jsHeapUsedMb": 3.96,
+      "jsHeapTotalMb": 4.56,
+      "domNodes": 73,
+      "jsEventListeners": 184,
       "documents": 1,
       "canvases": 0,
       "testHooks": false
     },
     {
       "label": "after cycle 1",
-      "jsHeapUsedMb": 8.06,
-      "jsHeapTotalMb": 8.6,
-      "domNodes": 179,
-      "jsEventListeners": 203,
+      "jsHeapUsedMb": 8.49,
+      "jsHeapTotalMb": 9.12,
+      "domNodes": 295,
+      "jsEventListeners": 221,
       "documents": 1,
       "canvases": 0,
       "testHooks": false,
@@ -48,22 +48,22 @@
     },
     {
       "label": "after cycle 2",
-      "jsHeapUsedMb": 8.43,
-      "jsHeapTotalMb": 9.1,
-      "domNodes": 179,
-      "jsEventListeners": 203,
+      "jsHeapUsedMb": 8.89,
+      "jsHeapTotalMb": 9.62,
+      "domNodes": 295,
+      "jsEventListeners": 221,
       "documents": 1,
       "canvases": 0,
       "testHooks": false,
-      "cycleAvgFps": 59.8,
+      "cycleAvgFps": 59.9,
       "cycleMaxEnemies": 8
     },
     {
       "label": "after cycle 3",
-      "jsHeapUsedMb": 8.67,
-      "jsHeapTotalMb": 9.35,
-      "domNodes": 178,
-      "jsEventListeners": 204,
+      "jsHeapUsedMb": 9.18,
+      "jsHeapTotalMb": 9.87,
+      "domNodes": 295,
+      "jsEventListeners": 223,
       "documents": 1,
       "canvases": 0,
       "testHooks": false,
@@ -72,10 +72,10 @@
     },
     {
       "label": "after cycle 4",
-      "jsHeapUsedMb": 8.76,
-      "jsHeapTotalMb": 9.35,
-      "domNodes": 179,
-      "jsEventListeners": 204,
+      "jsHeapUsedMb": 9.28,
+      "jsHeapTotalMb": 10.12,
+      "domNodes": 294,
+      "jsEventListeners": 221,
       "documents": 1,
       "canvases": 0,
       "testHooks": false,
@@ -84,15 +84,15 @@
     },
     {
       "label": "after cycle 5",
-      "jsHeapUsedMb": 8.93,
-      "jsHeapTotalMb": 9.85,
-      "domNodes": 178,
-      "jsEventListeners": 206,
+      "jsHeapUsedMb": 9.4,
+      "jsHeapTotalMb": 9.87,
+      "domNodes": 295,
+      "jsEventListeners": 221,
       "documents": 1,
       "canvases": 0,
       "testHooks": false,
       "cycleAvgFps": 59.9,
-      "cycleMaxEnemies": 8
+      "cycleMaxEnemies": 7
     }
   ]
 }

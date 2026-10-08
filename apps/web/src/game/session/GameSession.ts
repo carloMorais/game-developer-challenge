@@ -5,6 +5,7 @@ import {
   createMatchStats,
   createWorld,
   drainEvents,
+  forEachHullCircle,
   getHudSnapshot,
   getPlayer,
   recordMatchEvents,
@@ -21,7 +22,7 @@ import { InputState, type GameAction } from '../input/InputState';
 import { attachKeyboard } from '../input/keyboard';
 import { WorldView } from '../render/WorldView';
 import type { ShipLook } from '../shipLook';
-import { NO_INSETS, type Insets } from '../render/viewport';
+import { NO_INSETS, screenToWorld, type Insets } from '../render/viewport';
 
 export type PauseReason = 'manual' | 'hidden' | 'blur' | 'orientation';
 
@@ -215,6 +216,31 @@ export class GameSession {
   setInsets(insets: Insets): void {
     this.insets = insets;
     this.relayout?.();
+  }
+
+  /**
+   * Every hull circle of every ship, in screen (CSS) pixels relative to the
+   * canvas. Cheap (a few circles per ship); used to fade HUD elements that a
+   * ship sails under (at the HUD rate, not per frame).
+   */
+  getShipScreenCircles(out: { x: number; y: number; r: number }[] = []): typeof out {
+    out.length = 0;
+    const viewport = this.view?.getViewport();
+    if (!viewport) return out;
+    const { scale, offsetX, offsetY } = viewport;
+    for (const ship of this.world.ships) {
+      if (ship.hp <= 0) continue;
+      forEachHullCircle(this.world, ship, (x, y, r) => {
+        out.push({ x: offsetX + x * scale, y: offsetY + y * scale, r: r * scale });
+      });
+    }
+    return out;
+  }
+
+  /** Screen (CSS pixels, relative to the canvas) to world coordinates. */
+  screenToWorld(x: number, y: number): { x: number; y: number } {
+    const viewport = this.view?.getViewport();
+    return viewport ? screenToWorld(viewport, x, y) : { x, y };
   }
 
   /** Touch controls feed input here; ignored unless gameplay is active. */

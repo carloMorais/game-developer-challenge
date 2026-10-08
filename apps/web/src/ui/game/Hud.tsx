@@ -23,7 +23,7 @@ export function Hud({ hud, onPause }: HudProps) {
 
   return (
     <div className="hud" role="region" aria-label="Match status">
-      <div className="hud-health" data-testid="hud-health">
+      <div className="hud-health" data-testid="hud-health" data-obscurable>
         <UiSprite name="icon_heart" width={36} className="hud-health__icon" />
         <div className="hud-health__bar" style={uiSpriteStyle('health_frame', BAR_WIDTH)}>
           <div className="hud-health__clip" style={{ width: clipWidth }}>
@@ -41,6 +41,7 @@ export function Hud({ hud, onPause }: HudProps) {
           className="hud-counter"
           style={uiSpriteStyle('counter_panel', 128)}
           data-testid="hud-score"
+          data-obscurable
         >
           <UiSprite name="icon_score" width={26} />
           <span>
@@ -52,6 +53,7 @@ export function Hud({ hud, onPause }: HudProps) {
           className={`hud-counter ${countdownSecond(hud) !== null ? 'hud-counter--critical' : ''}`}
           style={uiSpriteStyle('counter_panel', 128)}
           data-testid="hud-time"
+          data-obscurable
         >
           <UiSprite name="icon_time" width={26} />
           <span>
@@ -59,7 +61,14 @@ export function Hud({ hud, onPause }: HudProps) {
             {formatTime(hud.remainingMs)}
           </span>
         </div>
-        <button type="button" className="round-btn" onClick={onPause} aria-label="Pause game">
+        <button
+          type="button"
+          className="round-btn hud-pause"
+          onClick={onPause}
+          aria-label="Pause game"
+          data-testid="hud-pause"
+          data-obscurable
+        >
           <UiSprite name="icon_pause" width={26} />
         </button>
       </div>

@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
   CUSTOM_DIFFICULTY,
   DIFFICULTY_PRESETS,
@@ -116,6 +116,41 @@ export function DifficultyScreen({ onStart }: { onStart(difficulty: Difficulty):
   const [selected, setSelected] = useState<Difficulty>(() => (isUnlocked(saved) ? saved : 'easy'));
   const [editing, setEditing] = useState(false);
   const group = useId();
+  const cardsRef = useRef<HTMLFieldSetElement>(null);
+  /** Card nearest the carousel centre (phones), for the dots. */
+  const [visible, setVisible] = useState(0);
+  const firstScroll = useRef(true);
+
+  // Phones show the cards as a carousel: keep the selected card in view
+  // (on open, and when arrow keys move the selection). Desktop never scrolls.
+  useEffect(() => {
+    const cards = cardsRef.current;
+    if (!cards || cards.scrollWidth <= cards.clientWidth) return;
+    const card = cards.querySelector('input:checked')?.closest('.setup-card');
+    card?.scrollIntoView({
+      inline: 'center',
+      block: 'nearest',
+      behavior: firstScroll.current ? 'instant' : 'smooth',
+    });
+    firstScroll.current = false;
+  }, [selected]);
+
+  const onCardsScroll = () => {
+    const cards = cardsRef.current;
+    if (!cards) return;
+    const centre = cards.getBoundingClientRect().left + cards.clientWidth / 2;
+    let best = 0;
+    let bestDistance = Infinity;
+    cards.querySelectorAll('.setup-card').forEach((card, i) => {
+      const box = card.getBoundingClientRect();
+      const distance = Math.abs(box.left + box.width / 2 - centre);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = i;
+      }
+    });
+    setVisible(best);
+  };
 
   return (
     <ScreenLayout>
@@ -130,7 +165,12 @@ export function DifficultyScreen({ onStart }: { onStart(difficulty: Difficulty):
             onStart(selected);
           }}
         >
-          <fieldset className="setup__cards">
+          <fieldset
+            ref={cardsRef}
+            className="setup__cards"
+            data-testid="difficulty-cards"
+            onScroll={onCardsScroll}
+          >
             <legend className="sr-only">Difficulty</legend>
             {PRESET_DIFFICULTIES.map((difficulty) => (
               <DifficultyCard
@@ -160,6 +200,11 @@ export function DifficultyScreen({ onStart }: { onStart(difficulty: Difficulty):
               </button>
             </div>
           </fieldset>
+          <ol className="setup__dots" aria-hidden="true">
+            {[...PRESET_DIFFICULTIES, 'custom'].map((difficulty, i) => (
+              <li key={difficulty} className={i === visible ? 'is-active' : undefined} />
+            ))}
+          </ol>
           <div className="menu-actions">
             <GameButton type="submit" sound="ui_open" data-autofocus>
               Set sail

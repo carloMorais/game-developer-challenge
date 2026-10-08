@@ -55,6 +55,8 @@ export interface PirateTestApi {
   advance(ms: number): void;
   state(): TestState;
   config(): unknown;
+  /** Moves the player ship under a screen point (CSS pixels) and renders a frame. */
+  placePlayerAt(screenX: number, screenY: number): void;
 }
 
 declare global {
@@ -68,6 +70,16 @@ export function installTestHooks(session: GameSession): () => void {
   const api: PirateTestApi = {
     advance: (ms) => session.advance(ms),
     config: () => session.world.config,
+    placePlayerAt: (screenX, screenY) => {
+      const player = getPlayer(session.world);
+      if (!player) return;
+      const { x, y } = session.screenToWorld(screenX, screenY);
+      player.x = x;
+      player.y = y;
+      player.prevX = x;
+      player.prevY = y;
+      session.advance(0);
+    },
     state: () => {
       const world = session.world;
       const player = getPlayer(world);

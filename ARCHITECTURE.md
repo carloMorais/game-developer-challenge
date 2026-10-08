@@ -124,7 +124,13 @@ The 5-cycle memory run in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) checks th
 
 ### Canvas fitting and pixel density
 
-The world is a fixed 1280×720 logical arena. `fitViewport` scales it uniformly to the available area and centres it (letterbox), and the water extends into the margins so the letterbox reads as open sea. The Pixi renderer uses `resizeTo` the container, `autoDensity` and `resolution = min(devicePixelRatio, 2)`, which gives sharp output on HiDPI screens with a bounded fill-rate cost. On touch devices the session reserves side gutters (`TOUCH_GUTTER`) for the buttons, so the arena is never covered. Arena limits and rules never depend on the screen size; resizing or rotating only changes the camera transform.
+The world is a fixed 1280×720 logical arena. `fitViewport` scales it uniformly to the available area and centres it (letterbox), and the water extends into the margins so the letterbox reads as open sea. The Pixi renderer uses `resizeTo` the container, `autoDensity` and `resolution = min(devicePixelRatio, 2)`, which gives sharp output on HiDPI screens with a bounded fill-rate cost. Touch devices use the full screen too (no reserved gutters): the translucent buttons are laid over the sea, and HUD elements fade when a ship is underneath (below). Arena limits and rules never depend on the screen size; resizing or rotating only changes the camera transform.
+
+### HUD fade, fullscreen and PWA
+
+- **HUD fade:** `GameSession.getShipScreenCircles()` maps every ship's hull circles to screen pixels with the current viewport transform. At the HUD rate (10 Hz; every frame under the manual test clock) an `ObscureWatcher` compares them with the cached rects of the `[data-obscurable]` elements (health, score, timer, pause, both touch clusters) and toggles `data-obscured`; CSS does the fading. Rects are measured once and again only after a resize (`ResizeObserver` / window resize), and no React render happens per frame. All of it lives on the render side, not in `game-core`.
+- **Fullscreen:** `lib/fullscreen.ts` wraps the standard and WebKit APIs; every call is try/catch and never blocks a match. **Set sail** / **Play again** call it from their click handlers (fullscreen needs a user gesture) on coarse pointers when `autoFullscreen` is on, then try `screen.orientation.lock('landscape')`. The app leaves that fullscreen when the player returns to a menu screen, keeps it across Play again, and never re-enters it automatically after the system back gesture.
+- **PWA:** `public/manifest.webmanifest` (fullscreen, landscape, icons in `public/icons/`) makes the game installable. There is deliberately no caching service worker: MSW registers `mockServiceWorker.js` at the root scope and a second worker would conflict with it.
 
 ### Input
 
@@ -229,7 +235,8 @@ WebSockets are out of scope, but the seams are in place:
 - **Network timing:** 6 s request timeout and 2 automatic retries. In the `timeout` scenario a failure takes about 20 s to surface (3 × 6 s plus backoff), which is deliberate so short outages recover silently.
 - **One arena layout.** Islands are data (`DEFAULT_ARENA`), but there is no map selection.
 - **AI steering** uses feelers, not path-finding. It handles the open layout of this arena well, but an enemy can occasionally hug a coastline for a moment before finding the way around.
-- **Mobile is landscape-only.** In portrait the battle pauses behind a "rotate your device" overlay.
+- **Mobile is landscape-only.** Fullscreen and the landscape lock are best effort (Android Chrome); elsewhere the battle pauses behind a "rotate your device" overlay in portrait. Only Android Chrome was tested on a real device; iOS is best effort.
+- **No offline mode.** The PWA manifest makes the game installable, but there is no caching worker: MSW owns the root service-worker scope.
 - **Mocks need service workers.** Without them (some private modes) ranking and history show an error; the game itself is unaffected.
 - **Sound** is not covered by automated tests (the suite runs muted), and its random pitch variation is not seeded.
 - **Performance** was measured on a single reference machine; see [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for the environment and caveats.

@@ -66,7 +66,7 @@ The E2E suite always builds and serves the current code (`vite build` + `vite pr
 
 ## Controls
 
-The controls are also shown on the setup screen that **Play** opens, in a collapsible **How to play** panel laid out like the keyboard (Q W E over A D, Space below), each key next to the icon of its touch button. It starts open and stays closed once the player collapses it.
+The controls are also shown on the setup screen that **Play** opens, in a collapsible **How to play** panel laid out like the keyboard (Q W E over A D, Space below), each key next to the icon of its touch button. It starts open on desktop and collapsed on touch devices, and remembers the player's choice.
 
 | Action                        | Keyboard          | Touch (landscape)          |
 | ----------------------------- | ----------------- | -------------------------- |
@@ -79,7 +79,13 @@ The controls are also shown on the setup screen that **Play** opens, in a collap
 
 Movement and firing can be combined freely (several keys or fingers at once). Game keys are only captured while a battle is live, so menus and dialogs keep normal keyboard navigation. The battle pauses automatically when the window loses focus, the tab is hidden or a phone is turned to portrait; resuming always needs an explicit action.
 
-On phones the battle runs in **landscape only**. The arena is letterboxed between two side gutters that hold the touch buttons, so they never cover the play area.
+On phones the battle runs in **landscape only**. **Set sail** and **Play again** switch to fullscreen and lock landscape where the browser allows it (Android Chrome); the player can turn this off in Options (touch devices only) and toggle fullscreen with the button next to the sound toggle or in the pause menu. Where orientation cannot be locked (iOS, desktop browsers), the battle pauses behind a "rotate your device" overlay in portrait.
+
+The arena fills the whole screen. The touch buttons are large (about 72–80 px, with a hit area of at least 88 px) and translucent, laid over the sea in the bottom corners. On short screens the HUD is compact, and any HUD element or button cluster with a ship underneath fades out so it never hides an enemy (the pause button stays tappable).
+
+### Install as an app
+
+The game is an installable web app (no app store): on Android Chrome use **Add to Home screen** / **Install app**; on iOS Safari use **Share → Add to Home Screen**. It then opens fullscreen in landscape with its own icon. There is no offline cache: the only service worker is MSW's mock worker.
 
 ## Gameplay configuration
 
@@ -199,4 +205,4 @@ docs/               Challenge brief, performance report, test and profiling repo
 
 ## Deployment
 
-Vercel builds the whole workspace from the repository root using [`vercel.json`](vercel.json): `pnpm install --frozen-lockfile`, `pnpm build`, output `apps/web/dist`, with an SPA rewrite that leaves `/assets/`, `/game/` and `/mockServiceWorker.js` alone. The MSW worker ships with the build, so the published game runs the ranking and history mocks.
+Vercel builds the whole workspace from the repository root using [`vercel.json`](vercel.json): `pnpm install --frozen-lockfile`, `pnpm build`, output `apps/web/dist`, with an SPA rewrite that leaves `/assets/`, `/game/`, `/icons/`, `/manifest.webmanifest` and `/mockServiceWorker.js` alone, and an explicit `application/manifest+json` type for the manifest. The MSW worker ships with the build, so the published game runs the ranking and history mocks.

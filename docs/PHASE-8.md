@@ -1,6 +1,6 @@
 # Phase 8: Mobile & release hardening
 
-Status: planned. Branch: `phase-8/mobile-hardening` (from `main`).
+Status: done. Branch: `phase-8/mobile-hardening` (from `main`).
 Primary test device: **Android Chrome** (no iPhone available; iOS behaviour is best effort).
 
 ## Goals

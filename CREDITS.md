@@ -18,7 +18,9 @@ Everything in [`assets/`](assets/) was provided with the challenge by Jungle Gam
 - the player ship sprite (`ship_5.png`) copied as the favicon;
 - copies of the individual UI PNGs (1× and 2×) used by the CSS menus, the sounds and the menu background.
 
-No image or sound was edited, re-encoded or optimised. The provided "retina" ship sheet is identical in size and coordinates to the 1× sheet, so only the 1× sheet is used.
+The installable-app icons in `apps/web/public/icons/` (192, 512, maskable 512 and the 180 px Apple touch icon) are the only derived images: the same `ship_5.png` drawn once, rotated, over a navy gradient, and saved as committed PNGs.
+
+Apart from those icons, no image or sound was edited, re-encoded or optimised. The provided "retina" ship sheet is identical in size and coordinates to the 1× sheet, so only the 1× sheet is used.
 
 Two particle textures (a soft dot and a ring) are generated at runtime; everything else on screen, health bars included, comes from the provided atlases. Fonts are system fonts (`Trebuchet MS`, `Segoe UI`, `system-ui`); no font files are bundled.
 

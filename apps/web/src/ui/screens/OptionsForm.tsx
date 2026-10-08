@@ -14,6 +14,7 @@ import {
   type ShipColor,
   type ShipLook,
 } from '../../game/shipLook';
+import { COARSE_POINTER_QUERY } from '../../lib/fullscreen';
 import { Dialog } from '../components/Dialog';
 import { GameButton } from '../components/GameButton';
 import { ShipPreview } from '../components/ShipPreview';
@@ -44,6 +45,9 @@ export function OptionsForm({ backLabel, onBack, note, onSaved }: OptionsFormPro
   const [sessionTime, setSessionTime] = useState(String(saved.options.sessionTime));
   const [spawnInterval, setSpawnInterval] = useState(String(saved.options.spawnInterval));
   const [look, setLook] = useState<ShipLook>(saved.shipLook);
+  const [autoFullscreen, setAutoFullscreen] = useState(saved.autoFullscreen);
+  // Fullscreen is a touch-device feature: desktop players never see the switch.
+  const [touch] = useState(() => window.matchMedia(COARSE_POINTER_QUERY).matches);
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [status, setStatus] = useState<string | null>(null);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
@@ -66,7 +70,8 @@ export function OptionsForm({ backLabel, onBack, note, onSaved }: OptionsFormPro
     look.sail !== saved.shipLook.sail ||
     look.flag !== saved.shipLook.flag ||
     look.hull !== saved.shipLook.hull;
-  const isDirty = battleDirty || lookDirty;
+  const fullscreenDirty = autoFullscreen !== saved.autoFullscreen;
+  const isDirty = battleDirty || lookDirty || fullscreenDirty;
 
   // Leaving with unsaved changes asks first.
   const leave = () => {
@@ -134,6 +139,7 @@ export function OptionsForm({ backLabel, onBack, note, onSaved }: OptionsFormPro
     // A new ship alone keeps the chosen difficulty; battle values select Custom.
     let ok = true;
     if (lookDirty) ok = saved.setShipLook(look) && ok;
+    if (fullscreenDirty) ok = saved.setAutoFullscreen(autoFullscreen) && ok;
     if (battleDirty) ok = saved.save(options, name) && ok;
     setStatus(ok ? 'Options saved.' : 'Options apply now, but could not be stored on this device.');
     if (ok) onSaved?.();
@@ -296,6 +302,20 @@ export function OptionsForm({ backLabel, onBack, note, onSaved }: OptionsFormPro
               </p>
             )}
           </div>
+
+          {touch && (
+            <label className="toggle-field">
+              <input
+                type="checkbox"
+                checked={autoFullscreen}
+                onChange={(e) => {
+                  setStatus(null);
+                  setAutoFullscreen(e.target.checked);
+                }}
+              />
+              <span>Fullscreen when a battle starts</span>
+            </label>
+          )}
         </section>
       </div>
 

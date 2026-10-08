@@ -64,12 +64,24 @@ const FIRE: readonly ControlDef[] = [
 export function TouchControls({ onAction }: TouchControlsProps) {
   return (
     <div className="touch-controls" data-testid="touch-controls">
-      <div className="touch-cluster touch-cluster--move" role="group" aria-label="Movement">
+      <div
+        className="touch-cluster touch-cluster--move"
+        role="group"
+        aria-label="Movement"
+        data-testid="touch-move"
+        data-obscurable
+      >
         {MOVE.map((def) => (
           <TouchButton key={def.action} def={def} onAction={onAction} />
         ))}
       </div>
-      <div className="touch-cluster touch-cluster--fire" role="group" aria-label="Cannons">
+      <div
+        className="touch-cluster touch-cluster--fire"
+        role="group"
+        aria-label="Cannons"
+        data-testid="touch-fire"
+        data-obscurable
+      >
         {FIRE.map((def) => (
           <TouchButton key={def.action} def={def} onAction={onAction} />
         ))}
@@ -121,7 +133,7 @@ function TouchButton({
       onLostPointerCapture={up}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <UiSprite name={def.icon} width={30} />
+      <UiSprite name={def.icon} width={36} />
     </button>
   );
 }
