@@ -1,5 +1,12 @@
 import { PAGE_SIZE_LIMITS } from './api';
-import type { MatchConfigDto, MatchRecordInput } from './matches';
+import {
+  MATCH_DIFFICULTIES,
+  MATCH_GRADES,
+  type MatchConfigDto,
+  type MatchDifficulty,
+  type MatchGrade,
+  type MatchRecordInput,
+} from './matches';
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
@@ -14,20 +21,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function parseMatchConfig(raw: unknown): ParseResult<MatchConfigDto> {
   if (!isRecord(raw)) return { ok: false, error: 'config must be an object' };
-  const { sessionTime, spawnInterval } = raw;
+  const { difficulty, sessionTime, spawnInterval } = raw;
+  if (!(MATCH_DIFFICULTIES as readonly unknown[]).includes(difficulty)) {
+    return {
+      ok: false,
+      error: `config.difficulty must be one of ${MATCH_DIFFICULTIES.join(', ')}`,
+    };
+  }
   if (typeof sessionTime !== 'number' || !Number.isInteger(sessionTime) || sessionTime <= 0) {
     return { ok: false, error: 'config.sessionTime must be a positive integer' };
   }
   if (typeof spawnInterval !== 'number' || !(spawnInterval > 0)) {
     return { ok: false, error: 'config.spawnInterval must be a positive number' };
   }
-  return { ok: true, value: { sessionTime, spawnInterval } };
+  return {
+    ok: true,
+    value: { difficulty: difficulty as MatchDifficulty, sessionTime, spawnInterval },
+  };
 }
 
 /** Validates an incoming match record (shared by mocks and the real server). */
 export function parseMatchRecordInput(raw: unknown): ParseResult<MatchRecordInput> {
   if (!isRecord(raw)) return { ok: false, error: 'body must be an object' };
-  const { matchId, playerId, playerName, score, durationMs, endReason, endedAt } = raw;
+  const { matchId, playerId, playerName, score, durationMs, endReason, grade, endedAt } = raw;
 
   if (typeof matchId !== 'string' || !ID_PATTERN.test(matchId)) {
     return { ok: false, error: 'matchId is invalid' };
@@ -56,6 +72,9 @@ export function parseMatchRecordInput(raw: unknown): ParseResult<MatchRecordInpu
   if (endReason !== 'timeUp' && endReason !== 'destroyed') {
     return { ok: false, error: 'endReason must be "timeUp" or "destroyed"' };
   }
+  if (!(MATCH_GRADES as readonly unknown[]).includes(grade)) {
+    return { ok: false, error: `grade must be one of ${MATCH_GRADES.join(', ')}` };
+  }
   if (typeof endedAt !== 'string' || Number.isNaN(Date.parse(endedAt))) {
     return { ok: false, error: 'endedAt must be an ISO date' };
   }
@@ -71,6 +90,7 @@ export function parseMatchRecordInput(raw: unknown): ParseResult<MatchRecordInpu
       score,
       durationMs: Math.round(durationMs),
       endReason,
+      grade: grade as MatchGrade,
       endedAt: new Date(endedAt).toISOString(),
       config: config.value,
     },
@@ -85,7 +105,9 @@ export function isSameMatch(a: MatchRecordInput, b: MatchRecordInput): boolean {
     a.score === b.score &&
     a.durationMs === b.durationMs &&
     a.endReason === b.endReason &&
+    a.grade === b.grade &&
     a.endedAt === b.endedAt &&
+    a.config.difficulty === b.config.difficulty &&
     a.config.sessionTime === b.config.sessionTime &&
     a.config.spawnInterval === b.config.spawnInterval
   );

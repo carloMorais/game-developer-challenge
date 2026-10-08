@@ -25,6 +25,7 @@ export const GameButton = forwardRef<HTMLButtonElement, GameButtonProps>(functio
     <button
       ref={ref}
       type={type === 'submit' ? 'submit' : 'button'}
+      data-sfx
       className={`game-btn game-btn--${variant} game-btn--${size} ${className}`}
       onClick={(event) => {
         if (sound) audio.play(sound, { volume: 0.6 });

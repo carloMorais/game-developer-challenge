@@ -24,6 +24,9 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, active = true):
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return;
+      // Another dialog opened on top (e.g. a confirmation) traps focus itself.
+      const active = document.activeElement;
+      if (active && !root.contains(active) && active.closest('[role="dialog"]')) return;
       const items = focusables();
       if (items.length === 0) {
         event.preventDefault();

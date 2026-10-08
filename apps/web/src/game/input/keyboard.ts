@@ -13,17 +13,6 @@ export const KEY_BINDINGS: Readonly<Record<string, GameAction>> = {
   KeyE: 'fireStarboard',
 };
 
-/** Human-readable controls, shown in the menus and the HUD help. */
-export const KEYBOARD_CONTROLS: readonly { keys: string[]; action: string }[] = [
-  { keys: ['W', '↑'], action: 'Sail forward' },
-  { keys: ['A', '←'], action: 'Turn left' },
-  { keys: ['D', '→'], action: 'Turn right' },
-  { keys: ['Space'], action: 'Fire bow cannon' },
-  { keys: ['Q'], action: 'Port broadside (left)' },
-  { keys: ['E'], action: 'Starboard broadside (right)' },
-  { keys: ['Esc', 'P'], action: 'Pause / resume' },
-];
-
 /**
  * Captures gameplay keys on `window` only while attached (active gameplay).
  * Returns a detach function. Default browser behaviour (scrolling, button

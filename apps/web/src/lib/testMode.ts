@@ -8,6 +8,7 @@
  * - `&noSpawns=1` disables enemy spawning (isolated movement tests).
  * - `&sturdy=1` gives the player a huge HP pool, so profiling runs last the
  *   whole match (a config change only; damage still applies).
+ * - `&unlockAll=1` treats every difficulty as unlocked.
  *
  * Seeds come from `?seed=` (match) and `?mockSeed=` (network mocks).
  */
@@ -22,5 +23,6 @@ export const testMode = {
   enabled,
   clock: params.get('clock') === 'realtime' ? ('realtime' as const) : ('manual' as const),
   noSpawns: enabled && params.get('noSpawns') === '1',
+  unlockAll: enabled && params.get('unlockAll') === '1',
   sturdy: enabled && params.get('sturdy') === '1',
 };

@@ -24,8 +24,8 @@ test.describe('10. Ranking and Match History: pagination, loading, empty and err
     await expect(page.getByRole('button', { name: 'Next page' })).toBeDisabled();
 
     await page
-      .getByLabel('Battle settings')
-      .selectOption({ label: '60 s battles · 3 s spawn interval' });
+      .getByLabel('Waters')
+      .selectOption({ label: 'Custom · 60 s battles · 3 s spawn interval' });
     await expect(page.getByText('Page 1 of 2')).toBeVisible();
   });
 
@@ -103,6 +103,7 @@ test.describe('10. Ranking and Match History: pagination, loading, empty and err
     test('API failures never block playing', async ({ page }) => {
       await openApp(page, { scenario: 'serverError' });
       await page.getByRole('button', { name: 'Play', exact: true }).click();
+      await page.getByRole('button', { name: 'Set sail' }).click();
       await expect(page.getByTestId('hud-score')).toBeVisible();
     });
   });

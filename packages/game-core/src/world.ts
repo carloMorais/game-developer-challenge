@@ -85,6 +85,8 @@ export type GameEvent =
       tick: number;
       shipId: EntityId;
       slot: WeaponSlot;
+      /** Projectiles in the volley. */
+      count: number;
       x: number;
       y: number;
       angle: number;
@@ -112,6 +114,7 @@ export type GameEvent =
       type: 'projectileEnded';
       tick: number;
       projectileId: EntityId;
+      team: Team;
       cause: ProjectileEndCause;
       x: number;
       y: number;

@@ -1,3 +1,6 @@
+import { DIFFICULTY_PRESETS, difficultyName, type Difficulty } from '@pirate/game-core';
+import type { MatchConfigDto } from '@pirate/contracts';
+
 /** Formats milliseconds as mm:ss, rounding up so 0:00 only shows at the very end. */
 export function formatTime(ms: number): string {
   const total = Math.ceil(Math.max(0, ms) / 1000);
@@ -20,6 +23,19 @@ export function formatDateTime(iso: string): { date: string; time: string } {
   };
 }
 
-export function formatConfig(config: { sessionTime: number; spawnInterval: number }): string {
-  return `${config.sessionTime} s battles · ${config.spawnInterval} s spawn interval`;
+export function formatConfig(config: MatchConfigDto): string {
+  if (config.difficulty !== 'custom') {
+    const preset = DIFFICULTY_PRESETS[config.difficulty];
+    return `${preset.name} (${preset.level})`;
+  }
+  return `Custom · ${config.sessionTime} s battles · ${config.spawnInterval} s spawn interval`;
+}
+
+export function formatDifficulty(difficulty: Difficulty): string {
+  return difficultyName(difficulty);
+}
+
+/** Hit share as a whole percentage, or a dash before the first shot. */
+export function formatAccuracy(hits: number, shots: number): string {
+  return shots > 0 ? `${Math.round((Math.min(hits, shots) / shots) * 100)}%` : '—';
 }

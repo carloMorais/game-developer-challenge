@@ -2,6 +2,7 @@ import type { HudSnapshot } from '@pirate/game-core';
 import { UiSprite } from '../components/UiSprite';
 import { uiSpriteStyle } from '../components/uiSpriteStyle';
 import { formatTime } from '../format';
+import { countdownSecond } from './countdownTime';
 
 const BAR_WIDTH = 220;
 /** Fill area inside the 256-wide health frame (atlas `fill_rect`). */
@@ -48,7 +49,7 @@ export function Hud({ hud, onPause }: HudProps) {
           </span>
         </div>
         <div
-          className="hud-counter"
+          className={`hud-counter ${countdownSecond(hud) !== null ? 'hud-counter--critical' : ''}`}
           style={uiSpriteStyle('counter_panel', 128)}
           data-testid="hud-time"
         >

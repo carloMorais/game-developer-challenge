@@ -110,6 +110,7 @@ function TouchButton({
   return (
     <button
       type="button"
+      data-sfx
       className={`touch-btn ${def.className}`}
       aria-label={def.label}
       // Touch buttons are a pointer affordance; keyboard players use key bindings.

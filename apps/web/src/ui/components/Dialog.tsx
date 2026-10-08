@@ -6,14 +6,16 @@ interface DialogProps {
   titleId: string;
   children: ReactNode;
   describedBy?: string;
+  /** Extra class on the backdrop. */
+  className?: string;
 }
 
 /** Modal dialog over the game: traps focus and restores it when closed. */
-export function Dialog({ titleId, describedBy, children }: DialogProps) {
+export function Dialog({ titleId, describedBy, className = '', children }: DialogProps) {
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref);
   return (
-    <div className="dialog-backdrop">
+    <div className={`dialog-backdrop ${className}`}>
       <div
         ref={ref}
         role="dialog"

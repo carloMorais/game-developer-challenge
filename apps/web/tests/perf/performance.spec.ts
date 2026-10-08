@@ -264,7 +264,7 @@ async function profileMatch(
 
   const probe = await collectProbe(page);
   const result = await page.evaluate(() => {
-    const raw = localStorage.getItem('pirate-battle:last-result:v1');
+    const raw = localStorage.getItem('pirate-battle:last-result:v2');
     return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
   });
 

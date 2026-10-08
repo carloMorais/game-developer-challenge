@@ -5,6 +5,7 @@ export type LogTab = 'ranking' | 'history';
 export type Route =
   | { name: 'menu' }
   | { name: 'options' }
+  | { name: 'setup' }
   | { name: 'play' }
   | { name: 'result' }
   | { name: 'log'; tab: LogTab };
@@ -18,6 +19,8 @@ export function parseRoute(hash: string): Route {
   switch (path) {
     case '/options':
       return { name: 'options' };
+    case '/setup':
+      return { name: 'setup' };
     case '/play':
       return { name: 'play' };
     case '/result':

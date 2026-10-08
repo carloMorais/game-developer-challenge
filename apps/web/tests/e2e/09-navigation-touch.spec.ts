@@ -8,6 +8,7 @@ test.describe('9. Abandoning, repeated navigation and touch controls', () => {
     await advance(page, 5000);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Main menu' }).click();
+    await page.getByRole('button', { name: 'Leave' }).click();
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
     await expect(page.locator('canvas')).toHaveCount(0);
 
@@ -44,6 +45,7 @@ test.describe('9. Abandoning, repeated navigation and touch controls', () => {
       await advance(page, 500);
       await page.keyboard.press('Escape');
       await page.getByRole('button', { name: 'Main menu' }).click();
+      await page.getByRole('button', { name: 'Leave' }).click();
       await expect(page.locator('canvas')).toHaveCount(0);
       await page.getByRole('button', { name: 'Options' }).click();
       await page.getByRole('button', { name: 'Main menu' }).click();

@@ -66,7 +66,7 @@ The E2E suite always builds and serves the current code (`vite build` + `vite pr
 
 ## Controls
 
-The controls are also shown on the main menu.
+The controls are also shown on the setup screen that **Play** opens, in a collapsible **How to play** panel laid out like the keyboard (Q W E over A D, Space below), each key next to the icon of its touch button. It starts open and stays closed once the player collapses it.
 
 | Action                        | Keyboard          | Touch (landscape)          |
 | ----------------------------- | ----------------- | -------------------------- |
@@ -95,18 +95,43 @@ Every gameplay number lives in one typed object, `DEFAULT_GAME_CONFIG` in [`pack
 | Chaser     | 40 HP, 128 px/s, explodes on contact for 20 damage (no score)                                                                                    |
 | Shooter    | 60 HP, 92 px/s, opens fire within 380 px, holds at 290 px; 8 damage, 1.9 s cooldown, 420 px range                                                |
 
-The **Options** screen (also reachable from the pause menu) exposes the two player-facing settings, validated by `validateMatchOptions` and persisted in `localStorage`:
+The **Options** screen exposes the two player-facing settings, validated by `validateMatchOptions` and persisted in `localStorage`:
 
 | Option            | Limits                                      | Default |
 | ----------------- | ------------------------------------------- | ------- |
 | Game session time | 60–180 s, whole seconds                     | 120 s   |
 | Enemy spawn time  | 1–15 s, in steps of 0.5 s (always positive) | 3 s     |
 
-Each match takes a deep-frozen snapshot of the config when it starts (`createMatchConfig`). Changes made during a match (from the pause menu) apply to the next one.
+Each match takes a deep-frozen snapshot of the config when it starts (`createMatchConfig`). Saving Options selects the **Custom** battle, so the next match uses exactly those values.
+
+## Difficulties, grades and progression
+
+**Play** opens a setup screen with four preset difficulties and a Custom battle. Presets are data in [`packages/game-core/src/difficulty.ts`](packages/game-core/src/difficulty.ts): fixed session and spawn times plus enemy multipliers applied by `applyDifficulty` (the player is never changed).
+
+| Difficulty            | Session / spawn | Enemies                                                         |
+| --------------------- | --------------- | --------------------------------------------------------------- |
+| Calm Waters (Easy)    | 90 s / 4 s      | 75 % HP, 60 % damage, 85 % speed, max 5 alive                   |
+| Open Sea (Normal)     | 120 s / 3 s     | Default balance                                                 |
+| Storm (Challenging)   | 120 s / 2.5 s   | 120 % HP, 125 % damage, 110 % speed, faster reload, max 10      |
+| Kraken’s Wrath (Hard) | 150 s / 2 s     | 140 % HP, 150 % damage, 120 % speed, much faster reload, max 12 |
+| Custom                | Options values  | Default balance; always available                               |
+
+A new player starts with Calm Waters (and Custom). **Surviving to the end with grade B or better** unlocks the next preset; progress and the best grade per difficulty are stored locally.
+
+Every match gets a **grade** (S, A+, A, B, C, D) from a 0–100 rating (`matchRating` in [`grade.ts`](packages/game-core/src/grade.ts)):
+
+- up to 60 points for kills, relative to the enemies the match could spawn (70 % of them earns all 60);
+- up to 25 points for health left and 15 for surviving, only when the ship is still afloat (so a sunk ship tops out at B).
+
+Thresholds: S ≥ 92, A+ ≥ 85, A ≥ 75, B ≥ 60, C ≥ 40, D below. The result screen leads with the grade, then a report card: Chasers and Shooters sunk, health left, accuracy, time, outcome and, last, the points.
+
+In the last 10 seconds a countdown takes over: a beep every second (louder for the final three), a large pulsing number, a red vignette that tightens and a pulsing HUD timer. When the match ends, a banner and a fanfare (or a sinking sting) play while the sea keeps moving, then the battle cross-fades into the result and the report card unfolds. Resuming from the pause menu runs a short 3-2-1 get-ready countdown; **Main menu** asks for confirmation before leaving the battle. The same red pulse marks low health (30 % or less) for as long as it lasts.
+
+On the setup screen the Custom card has a pencil button that edits its settings in place (the same form as Options); saving selects Custom and returns to the cards.
 
 ## Ranking, history and network scenarios
 
-Ranking and match history are REST resources (`/api/ranking`, `/api/ranking/configs`, `PUT /api/matches/:matchId`, `/api/players/:playerId/matches`) mocked by MSW in the browser. Other captains come from seeded fixtures; your confirmed matches are stored in `localStorage` and survive reloads. The ranking only compares matches with the same session time and spawn interval (a selector switches between configurations).
+Ranking and match history are REST resources (`/api/ranking`, `/api/ranking/configs`, `PUT /api/matches/:matchId`, `/api/players/:playerId/matches`) mocked by MSW in the browser. Other captains come from seeded fixtures; your confirmed matches are stored in `localStorage` and survive reloads. The ranking only compares matches with the same difficulty; Custom battles are further split by session time and spawn interval. A **Waters** selector switches between leaderboards and opens on the player’s current choice.
 
 ### Selecting and resetting a scenario
 
@@ -150,6 +175,8 @@ Only active with `?test=1`; normal players never see it.
 | `test=1`         | Manual simulation clock; exposes `window.__pirate` (`advance(ms)`, `state()`, `config()`) and `window.__pirateData.registerMatch` |
 | `clock=realtime` | With `test=1`: keeps the display-driven clock (pause/focus tests, profiling)                                                      |
 | `noSpawns=1`     | With `test=1`: no enemies (isolated movement tests)                                                                               |
+| `sturdy=1`       | With `test=1`: huge player HP pool, so profiling runs always reach time-up                                                        |
+| `unlockAll=1`    | With `test=1`: every difficulty is unlocked                                                                                       |
 | `seed=<n>`       | Match RNG seed (spawn points, enemy mix, effects)                                                                                 |
 
 `window.__pirateMocks` (scenario selection, reset, record count) is always available. Inputs in tests still go through real keyboard and pointer events; the instrumentation only reads state and drives the clock.

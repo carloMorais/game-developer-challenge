@@ -1,7 +1,16 @@
 export type MatchEndReason = 'timeUp' | 'destroyed';
 
+/** Mirrors the game's difficulty ids; `custom` uses the player's Options values. */
+export const MATCH_DIFFICULTIES = ['easy', 'normal', 'challenging', 'hard', 'custom'] as const;
+export type MatchDifficulty = (typeof MATCH_DIFFICULTIES)[number];
+
+/** Performance grade, best first. */
+export const MATCH_GRADES = ['S', 'A+', 'A', 'B', 'C', 'D'] as const;
+export type MatchGrade = (typeof MATCH_GRADES)[number];
+
 /** Player-facing settings a match ran with; ranking only compares equal configs. */
 export interface MatchConfigDto {
+  difficulty: MatchDifficulty;
   /** Seconds. */
   sessionTime: number;
   /** Seconds. */
@@ -17,6 +26,7 @@ export interface MatchRecordInput {
   /** Effective (unpaused) play time in milliseconds. */
   durationMs: number;
   endReason: MatchEndReason;
+  grade: MatchGrade;
   /** ISO 8601 timestamp. */
   endedAt: string;
   config: MatchConfigDto;
@@ -36,5 +46,5 @@ export interface RegisterMatchResponse {
 
 /** Key used to group ranking entries: only matches with the same config compete. */
 export function configKey(config: MatchConfigDto): string {
-  return `${config.sessionTime}s/${config.spawnInterval}s`;
+  return `${config.difficulty}/${config.sessionTime}s/${config.spawnInterval}s`;
 }

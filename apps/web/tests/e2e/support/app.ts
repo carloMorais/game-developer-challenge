@@ -69,6 +69,8 @@ export interface OpenOptions {
   noSpawns?: boolean;
   /** Huge player HP pool (profiling runs always reach time-up). */
   sturdy?: boolean;
+  /** Every difficulty unlocked. */
+  unlockAll?: boolean;
   clock?: 'manual' | 'realtime';
   /** Saved options/settings to start with. */
   settings?: {
@@ -76,6 +78,9 @@ export interface OpenOptions {
     spawnInterval?: number;
     playerName?: string;
     muted?: boolean;
+    /** Difficulty preselected on the setup screen (default: Custom, i.e. the options above). */
+    difficulty?: 'easy' | 'normal' | 'challenging' | 'hard' | 'custom';
+    howToPlayOpen?: boolean;
   };
 }
 
@@ -91,6 +96,7 @@ export async function openApp(page: Page, options: OpenOptions = {}): Promise<vo
   if (latency !== null) params.set('mockLatency', String(latency));
   if (options.noSpawns) params.set('noSpawns', '1');
   if (options.sturdy) params.set('sturdy', '1');
+  if (options.unlockAll) params.set('unlockAll', '1');
   if (options.clock) params.set('clock', options.clock);
 
   const settings = {
@@ -101,6 +107,8 @@ export async function openApp(page: Page, options: OpenOptions = {}): Promise<vo
       spawnInterval: options.settings?.spawnInterval ?? 3,
     },
     muted: options.settings?.muted ?? true,
+    difficulty: options.settings?.difficulty ?? 'custom',
+    howToPlayOpen: options.settings?.howToPlayOpen ?? true,
   };
   // Only on the first load of the context, so reload tests keep their data.
   await page.addInitScript((value) => {
@@ -113,9 +121,10 @@ export async function openApp(page: Page, options: OpenOptions = {}): Promise<vo
   await page.goto(`/?${params.toString()}${options.route ?? '#/'}`);
 }
 
-/** From the main menu: starts a battle and waits until it is live. */
+/** From the main menu: sets sail with the preselected difficulty and waits until the battle is live. */
 export async function startMatch(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.getByRole('button', { name: 'Set sail' }).click();
   await expect(page.getByTestId('hud-score')).toBeVisible({ timeout: 30_000 });
   await page.waitForFunction(() => !!(window as PirateWindow).__pirate);
 }
@@ -193,8 +202,9 @@ export function matchInput(matchId: string, overrides: Record<string, unknown> =
     score: 9,
     durationMs: 60_000,
     endReason: 'timeUp',
+    grade: 'C',
     endedAt: '2026-10-07T12:00:00.000Z',
-    config: { sessionTime: 120, spawnInterval: 3 },
+    config: { difficulty: 'custom', sessionTime: 120, spawnInterval: 3 },
     ...overrides,
   };
 }

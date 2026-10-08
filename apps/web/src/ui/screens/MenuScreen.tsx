@@ -1,10 +1,9 @@
 import { navigate } from '../../app/router';
-import { ControlsHelp } from '../components/ControlsHelp';
 import { GameButton } from '../components/GameButton';
 import { Panel } from '../components/Panel';
 import { ScreenLayout } from './ScreenLayout';
 
-export function MenuScreen({ onPlay }: { onPlay(): void }) {
+export function MenuScreen() {
   return (
     <ScreenLayout>
       <div className="menu-layout">
@@ -20,7 +19,7 @@ export function MenuScreen({ onPlay }: { onPlay(): void }) {
           </h1>
           <p className="tagline">Set sail. Take command.</p>
           <nav className="menu-actions" aria-label="Main menu">
-            <GameButton onClick={onPlay} data-autofocus>
+            <GameButton onClick={() => navigate({ name: 'setup' })} data-autofocus>
               Play
             </GameButton>
             <GameButton onClick={() => navigate({ name: 'options' })}>Options</GameButton>
@@ -43,9 +42,6 @@ export function MenuScreen({ onPlay }: { onPlay(): void }) {
               </GameButton>
             </div>
           </nav>
-        </Panel>
-        <Panel labelledBy="controls-title" className="controls-panel">
-          <ControlsHelp />
         </Panel>
       </div>
     </ScreenLayout>

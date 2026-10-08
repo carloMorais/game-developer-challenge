@@ -1,3 +1,5 @@
+import { playSynth, type SynthName } from './synth';
+
 export const SOUNDS = [
   'cannonball_water_hit_1',
   'cannonball_water_hit_2',
@@ -30,7 +32,13 @@ export const SOUNDS = [
 
 export type SoundName = (typeof SOUNDS)[number];
 
-export const UI_SOUNDS: readonly SoundName[] = ['ui_click', 'ui_back', 'ui_open', 'ui_close'];
+export const UI_SOUNDS: readonly SoundName[] = [
+  'ui_click',
+  'ui_back',
+  'ui_open',
+  'ui_close',
+  'ui_hover',
+];
 
 export interface LoopHandle {
   setVolume(volume: number): void;
@@ -39,6 +47,8 @@ export interface LoopHandle {
 
 /** Same sound retriggered faster than this is dropped (avoids volume spikes). */
 const MIN_RETRIGGER_MS = 45;
+/** Longer than the longest synth recipe. */
+const SYNTH_RELEASE_MS = 2000;
 
 /**
  * Small Web Audio wrapper. Sound is optional: if the context or a file fails,
@@ -93,6 +103,28 @@ export class AudioManager {
       source.disconnect();
       gain.disconnect();
     };
+  }
+
+  /** Plays a procedural cue; `pan` is -1 (left) .. 1 (right). */
+  synth(name: SynthName, { volume = 1, pan = 0 }: { volume?: number; pan?: number } = {}): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || ctx.state !== 'running' || this.muted) return;
+    const gain = ctx.createGain();
+    gain.gain.value = volume;
+    let panner: StereoPannerNode | null = null;
+    if (pan !== 0 && typeof ctx.createStereoPanner === 'function') {
+      panner = ctx.createStereoPanner();
+      panner.pan.value = pan;
+      gain.connect(panner).connect(this.master);
+    } else {
+      gain.connect(this.master);
+    }
+    playSynth(ctx, gain, name);
+    // Recipes stop their own nodes; release the shared chain once they are done.
+    window.setTimeout(() => {
+      gain.disconnect();
+      panner?.disconnect();
+    }, SYNTH_RELEASE_MS);
   }
 
   loop(name: SoundName, volume: number): LoopHandle {

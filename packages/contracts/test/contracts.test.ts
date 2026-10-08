@@ -15,8 +15,9 @@ const base: MatchRecordInput = {
   score: 10,
   durationMs: 120_000,
   endReason: 'timeUp',
+  grade: 'B',
   endedAt: '2026-10-07T12:00:00.000Z',
-  config: { sessionTime: 120, spawnInterval: 3 },
+  config: { difficulty: 'normal', sessionTime: 120, spawnInterval: 3 },
 };
 
 describe('compareRanking', () => {
@@ -82,7 +83,9 @@ describe('parseMatchRecordInput', () => {
     ['score', { score: 1.5 }],
     ['endReason', { endReason: 'quit' }],
     ['endedAt', { endedAt: 'yesterday' }],
-    ['config', { config: { sessionTime: 0, spawnInterval: 3 } }],
+    ['config', { config: { difficulty: 'normal', sessionTime: 0, spawnInterval: 3 } }],
+    ['config.difficulty', { config: { difficulty: 'insane', sessionTime: 60, spawnInterval: 3 } }],
+    ['grade', { grade: 'Z' }],
   ])('rejects an invalid %s', (_field, patch) => {
     expect(parseMatchRecordInput({ ...base, ...patch }).ok).toBe(false);
   });
@@ -92,6 +95,9 @@ describe('idempotency helpers', () => {
   it('recognises the same match and a conflicting one', () => {
     expect(isSameMatch(base, { ...base })).toBe(true);
     expect(isSameMatch(base, { ...base, score: 11 })).toBe(false);
+    expect(isSameMatch(base, { ...base, config: { ...base.config, difficulty: 'hard' } })).toBe(
+      false,
+    );
   });
 });
 

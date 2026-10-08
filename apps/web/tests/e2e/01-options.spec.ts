@@ -73,6 +73,7 @@ test.describe('1. Navigation, validation and persistence of options', () => {
   test('a match uses the options saved when it started', async ({ page }) => {
     await openApp(page, { settings: { sessionTime: 75, spawnInterval: 3 } });
     await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.getByRole('button', { name: 'Set sail' }).click();
     await expect(page.getByTestId('hud-time')).toContainText('01:15');
   });
 });
